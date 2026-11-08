@@ -1,6 +1,7 @@
 package com.palavaca.back.dto;
 
 import jakarta.validation.constraints.NotNull;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import lombok.Builder;
 import lombok.Data;
 
@@ -16,19 +17,25 @@ public class WeightRecordDTO {
         @NotNull(message = "El ID del animal es obligatorio")
         private UUID animalId;
 
-        @NotNull(message = "La fecha del pesaje es obligatoria")
         private LocalDate weighDate;
 
         @NotNull(message = "El peso en kilogramos es obligatorio")
+        @JsonAlias("weight")
         private BigDecimal weightKg;
 
+        private LocalDateTime measuredAt;
+        private LocalDateTime date;
+        private String method;
         private String notes;
     }
 
     @Data
     public static class UpdateRequest {
         private LocalDate weighDate;
+        @JsonAlias("weight")
         private BigDecimal weightKg;
+        private LocalDateTime measuredAt;
+        private String method;
         private String notes;
     }
 
@@ -40,6 +47,9 @@ public class WeightRecordDTO {
         private String animalTagNumber;
         private LocalDate weighDate;
         private BigDecimal weightKg;
+        private BigDecimal weight;
+        private LocalDateTime measuredAt;
+        private String method;
         private String notes;
         private LocalDateTime createdAt;
     }

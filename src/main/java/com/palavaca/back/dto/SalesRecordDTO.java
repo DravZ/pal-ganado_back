@@ -9,14 +9,16 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import java.util.List;
 
 public class SalesRecordDTO {
 
     @Data
     public static class CreateRequest {
-        @NotNull(message = "El ID de la organización es obligatorio")
         private UUID organizationId;
 
+        private UUID farmId;
+        private String saleNumber;
         private UUID customerId;
         private UUID animalId;
         private UUID productId;
@@ -29,24 +31,45 @@ public class SalesRecordDTO {
 
         private BigDecimal quantity;
         private BigDecimal unitPrice;
+        private BigDecimal subtotal;
+        private BigDecimal tax;
+        private BigDecimal total;
 
-        @NotNull(message = "El monto total es obligatorio")
         private BigDecimal totalAmount;
 
         private String paymentStatus;
         private String notes;
+        private List<LineRequest> lines;
     }
 
     @Data
     public static class UpdateRequest {
+        private UUID farmId;
+        private String saleNumber;
         private UUID customerId;
         private LocalDate saleDate;
         private String concept;
         private BigDecimal quantity;
         private BigDecimal unitPrice;
+        private BigDecimal subtotal;
+        private BigDecimal tax;
+        private BigDecimal total;
         private BigDecimal totalAmount;
         private String paymentStatus;
         private String notes;
+        private List<LineRequest> lines;
+    }
+
+    @Data
+    public static class LineRequest {
+        private String itemType;
+        private UUID animalId;
+        private UUID lotId;
+        private UUID productId;
+        private BigDecimal quantity;
+        private BigDecimal weight;
+        private BigDecimal unitPrice;
+        private BigDecimal subtotal;
     }
 
     @Data
@@ -54,6 +77,8 @@ public class SalesRecordDTO {
     public static class Response {
         private UUID id;
         private UUID organizationId;
+        private UUID farmId;
+        private String saleNumber;
         private UUID customerId;
         private String customerName;
         private UUID animalId;
@@ -64,9 +89,27 @@ public class SalesRecordDTO {
         private String concept;
         private BigDecimal quantity;
         private BigDecimal unitPrice;
+        private BigDecimal subtotal;
+        private BigDecimal tax;
+        private BigDecimal total;
         private BigDecimal totalAmount;
         private String paymentStatus;
         private String notes;
+        private List<LineResponse> lines;
         private LocalDateTime createdAt;
+    }
+
+    @Data
+    @Builder
+    public static class LineResponse {
+        private UUID id;
+        private String itemType;
+        private UUID animalId;
+        private UUID lotId;
+        private UUID productId;
+        private BigDecimal quantity;
+        private BigDecimal weight;
+        private BigDecimal unitPrice;
+        private BigDecimal subtotal;
     }
 }

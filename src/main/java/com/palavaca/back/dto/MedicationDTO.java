@@ -20,6 +20,8 @@ public class MedicationDTO {
         private String activeIngredient;
         private String category;
         private String presentation;
+        private String concentration;
+        private String route;
         private String defaultUnit;
         private Integer withdrawalDaysMilk;
         private Integer withdrawalDaysMeat;
@@ -33,6 +35,8 @@ public class MedicationDTO {
         private String activeIngredient;
         private String category;
         private String presentation;
+        private String concentration;
+        private String route;
         private String defaultUnit;
         private Integer withdrawalDaysMilk;
         private Integer withdrawalDaysMeat;
@@ -47,6 +51,8 @@ public class MedicationDTO {
         private String activeIngredient;
         private String category;
         private String presentation;
+        private String concentration;
+        private String route;
         private String defaultUnit;
         private Integer withdrawalDaysMilk;
         private Integer withdrawalDaysMeat;

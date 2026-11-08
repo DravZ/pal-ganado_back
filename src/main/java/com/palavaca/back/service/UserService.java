@@ -3,8 +3,10 @@ package com.palavaca.back.service;
 import com.palavaca.back.dto.UserDTO;
 import com.palavaca.back.model.Organization;
 import com.palavaca.back.model.User;
+import com.palavaca.back.model.Farm;
 import com.palavaca.back.repository.OrganizationRepository;
 import com.palavaca.back.repository.UserRepository;
+import com.palavaca.back.repository.FarmRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,6 +21,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final OrganizationRepository organizationRepository;
+    private final FarmRepository farmRepository;
 
     @Transactional(readOnly = true)
     public List<UserDTO.Response> findByOrganizationId(UUID organizationId) {
@@ -43,12 +46,23 @@ public class UserService {
         Organization org = organizationRepository.findById(request.getOrganizationId())
                 .orElseThrow(() -> new EntityNotFoundException("Organización no encontrada con ID: " + request.getOrganizationId()));
 
+        Farm farm = request.getFarmId() == null ? null : farmRepository.findById(request.getFarmId())
+                .orElseThrow(() -> new EntityNotFoundException("Finca no encontrada con ID: " + request.getFarmId()));
+        String name = request.getName();
+        if ((name == null || name.isBlank()) && request.getFirstName() != null) {
+            name = (request.getFirstName() + " " + (request.getLastName() == null ? "" : request.getLastName())).trim();
+        }
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("El nombre es obligatorio");
+        }
         User user = User.builder()
                 .organization(org)
-                .name(request.getName())
+                .farm(farm)
+                .name(name)
                 .email(request.getEmail())
                 .phone(request.getPhone())
-                .status("active")
+                .role(request.getRole() != null ? request.getRole() : "Perfil por confirmar")
+                .status("pending_invitation")
                 .build();
 
         return mapToResponse(userRepository.save(user));
@@ -69,6 +83,12 @@ public class UserService {
         if (request.getName() != null) user.setName(request.getName());
         if (request.getPhone() != null) user.setPhone(request.getPhone());
         if (request.getStatus() != null) user.setStatus(request.getStatus());
+        if (request.getRole() != null) user.setRole(request.getRole());
+        if (request.getFarmId() != null) {
+            Farm farm = farmRepository.findById(request.getFarmId())
+                    .orElseThrow(() -> new EntityNotFoundException("Finca no encontrada"));
+            user.setFarm(farm);
+        }
 
         return mapToResponse(userRepository.save(user));
     }
@@ -82,6 +102,9 @@ public class UserService {
                 .email(user.getEmail())
                 .phone(user.getPhone())
                 .status(user.getStatus())
+                .role(user.getRole())
+                .farmId(user.getFarm() != null ? user.getFarm().getId() : null)
+                .farmName(user.getFarm() != null ? user.getFarm().getName() : null)
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
                 .build();

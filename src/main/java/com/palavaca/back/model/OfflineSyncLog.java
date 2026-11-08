@@ -27,9 +27,8 @@ public class OfflineSyncLog {
     @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
-    @NotNull(message = "El usuario es obligatorio")
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id")
     private User user;
 
     @NotBlank(message = "La entidad objetivo es obligatoria")
@@ -42,6 +41,9 @@ public class OfflineSyncLog {
     @Column(name = "action_type", nullable = false, length = 30) // CREATE, UPDATE, DELETE
     private String actionType;
 
+    @Column(name = "entity_id")
+    private UUID entityId;
+
     @Column(name = "payload", columnDefinition = "TEXT")
     private String payload; // JSON con los datos capturados offline
 
@@ -49,6 +51,10 @@ public class OfflineSyncLog {
     @Size(max = 30)
     @Column(name = "sync_status", nullable = false, length = 30) // PENDING, PROCESSED, FAILED
     private String syncStatus = "PENDING";
+
+    @Builder.Default
+    @Column(name = "retry_count", nullable = false)
+    private Integer retryCount = 0;
 
     @Column(name = "error_message", columnDefinition = "TEXT")
     private String errorMessage;

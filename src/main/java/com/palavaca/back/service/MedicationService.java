@@ -38,6 +38,8 @@ public class MedicationService {
                 .activeIngredient(request.getActiveIngredient())
                 .category(request.getCategory())
                 .presentation(request.getPresentation())
+                .concentration(request.getConcentration())
+                .route(request.getRoute())
                 .defaultUnit(request.getDefaultUnit())
                 .withdrawalDaysMilk(request.getWithdrawalDaysMilk())
                 .withdrawalDaysMeat(request.getWithdrawalDaysMeat())
@@ -56,6 +58,8 @@ public class MedicationService {
         if (request.getActiveIngredient() != null) med.setActiveIngredient(request.getActiveIngredient());
         if (request.getCategory() != null) med.setCategory(request.getCategory());
         if (request.getPresentation() != null) med.setPresentation(request.getPresentation());
+        if (request.getConcentration() != null) med.setConcentration(request.getConcentration());
+        if (request.getRoute() != null) med.setRoute(request.getRoute());
         if (request.getDefaultUnit() != null) med.setDefaultUnit(request.getDefaultUnit());
         if (request.getWithdrawalDaysMilk() != null) med.setWithdrawalDaysMilk(request.getWithdrawalDaysMilk());
         if (request.getWithdrawalDaysMeat() != null) med.setWithdrawalDaysMeat(request.getWithdrawalDaysMeat());
@@ -79,6 +83,8 @@ public class MedicationService {
                 .activeIngredient(med.getActiveIngredient())
                 .category(med.getCategory())
                 .presentation(med.getPresentation())
+                .concentration(med.getConcentration())
+                .route(med.getRoute())
                 .defaultUnit(med.getDefaultUnit())
                 .withdrawalDaysMilk(med.getWithdrawalDaysMilk())
                 .withdrawalDaysMeat(med.getWithdrawalDaysMeat())

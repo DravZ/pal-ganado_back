@@ -26,6 +26,9 @@ public class HealthRecordDTO {
         private String eventType;
 
         private String diagnosis;
+        private String symptoms;
+        private String result;
+        private String veterinarianName;
         private BigDecimal dosage;
         private String unit;
         private LocalDate withdrawalEndDate;
@@ -38,6 +41,9 @@ public class HealthRecordDTO {
         private LocalDate eventDate;
         private String eventType;
         private String diagnosis;
+        private String symptoms;
+        private String result;
+        private String veterinarianName;
         private BigDecimal dosage;
         private String unit;
         private LocalDate withdrawalEndDate;
@@ -55,6 +61,9 @@ public class HealthRecordDTO {
         private LocalDate eventDate;
         private String eventType;
         private String diagnosis;
+        private String symptoms;
+        private String result;
+        private String veterinarianName;
         private BigDecimal dosage;
         private String unit;
         private LocalDate withdrawalEndDate;

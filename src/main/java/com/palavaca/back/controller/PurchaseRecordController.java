@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/purchase-records")
+@RequestMapping({"/api/v1/purchase-records", "/api/v1/purchases"})
 @RequiredArgsConstructor
 @Tag(name = "Compras", description = "Gestión de compras a proveedores de la organización")
 public class PurchaseRecordController {
@@ -23,7 +23,11 @@ public class PurchaseRecordController {
 
     @GetMapping
     @Operation(summary = "Obtener historial de compras de una organización")
-    public ResponseEntity<List<PurchaseRecordDTO.Response>> getByOrganization(@RequestParam("organization_id") UUID organizationId) {
+    public ResponseEntity<List<PurchaseRecordDTO.Response>> getByOrganization(
+            @RequestParam(value = "organization_id", required = false) UUID organizationId,
+            @RequestParam(value = "farm_id", required = false) UUID farmId) {
+        if (farmId != null) return ResponseEntity.ok(purchaseRecordService.findByFarmId(farmId));
+        if (organizationId == null) return ResponseEntity.badRequest().build();
         return ResponseEntity.ok(purchaseRecordService.findByOrganizationId(organizationId));
     }
 

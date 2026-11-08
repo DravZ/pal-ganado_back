@@ -42,8 +42,14 @@ public class FarmService {
         Farm farm = Farm.builder()
                 .organization(org)
                 .name(request.getName())
+                .code(request.getCode())
+                .state(request.getState())
+                .municipality(request.getMunicipality())
+                .locality(request.getLocality())
+                .address(request.getAddress())
                 .location(request.getLocation())
-                .totalAreaHectares(request.getTotalAreaHectares())
+                .totalAreaHectares(request.getHectares() != null ? request.getHectares() : request.getTotalAreaHectares())
+                .status(request.getStatus() != null ? request.getStatus() : "active")
                 .build();
 
         return mapToResponse(farmRepository.save(farm));
@@ -55,8 +61,15 @@ public class FarmService {
                 .orElseThrow(() -> new EntityNotFoundException("Finca no encontrada con ID: " + id));
 
         if (request.getName() != null) farm.setName(request.getName());
+        if (request.getCode() != null) farm.setCode(request.getCode());
+        if (request.getState() != null) farm.setState(request.getState());
+        if (request.getMunicipality() != null) farm.setMunicipality(request.getMunicipality());
+        if (request.getLocality() != null) farm.setLocality(request.getLocality());
+        if (request.getAddress() != null) farm.setAddress(request.getAddress());
         if (request.getLocation() != null) farm.setLocation(request.getLocation());
         if (request.getTotalAreaHectares() != null) farm.setTotalAreaHectares(request.getTotalAreaHectares());
+        if (request.getHectares() != null) farm.setTotalAreaHectares(request.getHectares());
+        if (request.getStatus() != null) farm.setStatus(request.getStatus());
 
         return mapToResponse(farmRepository.save(farm));
     }
@@ -74,8 +87,15 @@ public class FarmService {
                 .id(f.getId())
                 .organizationId(f.getOrganization().getId())
                 .name(f.getName())
+                .code(f.getCode())
+                .state(f.getState())
+                .municipality(f.getMunicipality())
+                .locality(f.getLocality())
+                .address(f.getAddress())
                 .location(f.getLocation())
                 .totalAreaHectares(f.getTotalAreaHectares())
+                .hectares(f.getTotalAreaHectares())
+                .status(f.getStatus())
                 .createdAt(f.getCreatedAt())
                 .updatedAt(f.getUpdatedAt())
                 .build();

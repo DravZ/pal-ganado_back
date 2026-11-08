@@ -38,12 +38,35 @@ public class Farm {
     @Column(name = "name", nullable = false, length = 150)
     private String name;
 
+    @Size(max = 50)
+    @Column(name = "code", length = 50)
+    private String code;
+
+    @Size(max = 100)
+    @Column(name = "state", length = 100)
+    private String state;
+
+    @Size(max = 100)
+    @Column(name = "municipality", length = 100)
+    private String municipality;
+
+    @Size(max = 100)
+    @Column(name = "locality", length = 100)
+    private String locality;
+
+    @Column(name = "address", columnDefinition = "TEXT")
+    private String address;
+
     @Size(max = 150)
     @Column(name = "location", length = 150)
     private String location;
 
     @Column(name = "total_area_hectares", precision = 10, scale = 2)
     private BigDecimal totalAreaHectares;
+
+    @Builder.Default
+    @Column(name = "status", nullable = false, length = 30)
+    private String status = "active";
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

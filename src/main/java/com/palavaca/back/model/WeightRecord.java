@@ -40,6 +40,12 @@ public class WeightRecord {
     @Column(name = "weight_kg", nullable = false, precision = 8, scale = 2)
     private BigDecimal weightKg;
 
+    @Column(name = "measured_at")
+    private LocalDateTime measuredAt;
+
+    @Column(name = "method", length = 50)
+    private String method;
+
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
 

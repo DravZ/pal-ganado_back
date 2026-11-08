@@ -54,6 +54,9 @@ public class HealthRecordService {
                 .eventDate(request.getEventDate())
                 .eventType(request.getEventType())
                 .diagnosis(request.getDiagnosis())
+                .symptoms(request.getSymptoms())
+                .result(request.getResult())
+                .veterinarianName(request.getVeterinarianName())
                 .dosage(request.getDosage())
                 .unit(request.getUnit())
                 .withdrawalEndDate(request.getWithdrawalEndDate())
@@ -77,6 +80,9 @@ public class HealthRecordService {
         if (request.getEventDate() != null) record.setEventDate(request.getEventDate());
         if (request.getEventType() != null) record.setEventType(request.getEventType());
         if (request.getDiagnosis() != null) record.setDiagnosis(request.getDiagnosis());
+        if (request.getSymptoms() != null) record.setSymptoms(request.getSymptoms());
+        if (request.getResult() != null) record.setResult(request.getResult());
+        if (request.getVeterinarianName() != null) record.setVeterinarianName(request.getVeterinarianName());
         if (request.getDosage() != null) record.setDosage(request.getDosage());
         if (request.getUnit() != null) record.setUnit(request.getUnit());
         if (request.getWithdrawalEndDate() != null) record.setWithdrawalEndDate(request.getWithdrawalEndDate());
@@ -103,6 +109,9 @@ public class HealthRecordService {
                 .eventDate(h.getEventDate())
                 .eventType(h.getEventType())
                 .diagnosis(h.getDiagnosis())
+                .symptoms(h.getSymptoms())
+                .result(h.getResult())
+                .veterinarianName(h.getVeterinarianName())
                 .dosage(h.getDosage())
                 .unit(h.getUnit())
                 .withdrawalEndDate(h.getWithdrawalEndDate())

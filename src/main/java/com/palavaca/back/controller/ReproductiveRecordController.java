@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/reproductive-records")
+@RequestMapping({"/api/v1/reproductive-records", "/api/v1/reproductive-events"})
 @RequiredArgsConstructor
 @Tag(name = "Registros Reproductivos", description = "Control de celos, inseminación, palpación y partos")
 public class ReproductiveRecordController {

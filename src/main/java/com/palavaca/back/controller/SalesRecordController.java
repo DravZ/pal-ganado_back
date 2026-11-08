@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/sales-records")
+@RequestMapping({"/api/v1/sales-records", "/api/v1/sales"})
 @RequiredArgsConstructor
 @Tag(name = "Ventas", description = "Gestión comercial de ventas de ganado, leche y productos")
 public class SalesRecordController {
@@ -23,7 +23,11 @@ public class SalesRecordController {
 
     @GetMapping
     @Operation(summary = "Obtener historial de ventas de una organización")
-    public ResponseEntity<List<SalesRecordDTO.Response>> getByOrganization(@RequestParam("organization_id") UUID organizationId) {
+    public ResponseEntity<List<SalesRecordDTO.Response>> getByOrganization(
+            @RequestParam(value = "organization_id", required = false) UUID organizationId,
+            @RequestParam(value = "farm_id", required = false) UUID farmId) {
+        if (farmId != null) return ResponseEntity.ok(salesRecordService.findByFarmId(farmId));
+        if (organizationId == null) return ResponseEntity.badRequest().build();
         return ResponseEntity.ok(salesRecordService.findByOrganizationId(organizationId));
     }
 

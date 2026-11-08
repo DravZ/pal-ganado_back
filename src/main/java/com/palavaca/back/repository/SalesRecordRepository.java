@@ -11,5 +11,6 @@ import java.util.UUID;
 @Repository
 public interface SalesRecordRepository extends JpaRepository<SalesRecord, UUID> {
     List<SalesRecord> findByOrganizationIdOrderBySaleDateDesc(UUID organizationId);
+    List<SalesRecord> findByFarmIdOrderBySaleDateDesc(UUID farmId);
     List<SalesRecord> findByOrganizationIdAndSaleDateBetween(UUID organizationId, LocalDate startDate, LocalDate endDate);
 }

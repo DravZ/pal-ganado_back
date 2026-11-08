@@ -11,5 +11,6 @@ import java.util.UUID;
 @Repository
 public interface PurchaseRecordRepository extends JpaRepository<PurchaseRecord, UUID> {
     List<PurchaseRecord> findByOrganizationIdOrderByPurchaseDateDesc(UUID organizationId);
+    List<PurchaseRecord> findByFarmIdOrderByPurchaseDateDesc(UUID farmId);
     List<PurchaseRecord> findByOrganizationIdAndPurchaseDateBetween(UUID organizationId, LocalDate startDate, LocalDate endDate);
 }

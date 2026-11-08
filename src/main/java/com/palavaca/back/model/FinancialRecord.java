@@ -34,6 +34,14 @@ public class FinancialRecord {
     @JoinColumn(name = "organization_id", nullable = false)
     private Organization organization;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "farm_id")
+    private Farm farm;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "supplier_id")
+    private Supplier supplier;
+
     @NotNull(message = "La fecha es obligatoria")
     @Column(name = "record_date", nullable = false)
     private LocalDate recordDate;

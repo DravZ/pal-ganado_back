@@ -49,6 +49,12 @@ public class Inventory {
     @Column(name = "min_stock", precision = 12, scale = 2)
     private BigDecimal minStock;
 
+    @Column(name = "reorder_point", precision = 12, scale = 2)
+    private BigDecimal reorderPoint;
+
+    @Column(name = "average_cost", precision = 14, scale = 4)
+    private BigDecimal averageCost;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

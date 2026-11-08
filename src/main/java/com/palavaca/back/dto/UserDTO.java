@@ -17,9 +17,10 @@ public class UserDTO {
         @NotNull(message = "El ID de la organización es obligatorio")
         private UUID organizationId;
 
-        @NotBlank(message = "El nombre es obligatorio")
         @Size(max = 150)
         private String name;
+        private String firstName;
+        private String lastName;
 
         @NotBlank(message = "El email es obligatorio")
         @Email
@@ -28,6 +29,8 @@ public class UserDTO {
 
         @Size(max = 30)
         private String phone;
+        private String role;
+        private UUID farmId;
     }
 
     @Data
@@ -43,6 +46,8 @@ public class UserDTO {
         private String phone;
 
         private String status;
+        private String role;
+        private UUID farmId;
     }
 
     @Data
@@ -55,6 +60,9 @@ public class UserDTO {
         private String email;
         private String phone;
         private String status;
+        private String role;
+        private UUID farmId;
+        private String farmName;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
     }

@@ -13,8 +13,8 @@ public class ReproductiveRecordDTO {
 
     @Data
     public static class CreateRequest {
-        @NotNull(message = "El ID del animal (hembra) es obligatorio")
         private UUID animalId;
+        private UUID femaleAnimalId;
 
         @NotNull(message = "La fecha del evento es obligatoria")
         private LocalDate eventDate;
@@ -24,7 +24,9 @@ public class ReproductiveRecordDTO {
         private String eventType;
 
         private UUID sireId;
+        private UUID maleAnimalId;
         private LocalDate expectedBirthDate;
+        private LocalDate expectedDate;
         private String pregnancyStatus;
         private String notes;
     }
@@ -34,7 +36,9 @@ public class ReproductiveRecordDTO {
         private LocalDate eventDate;
         private String eventType;
         private UUID sireId;
+        private UUID maleAnimalId;
         private LocalDate expectedBirthDate;
+        private LocalDate expectedDate;
         private String pregnancyStatus;
         private String notes;
     }
@@ -44,12 +48,15 @@ public class ReproductiveRecordDTO {
     public static class Response {
         private UUID id;
         private UUID animalId;
+        private UUID femaleAnimalId;
         private String animalTagNumber;
         private LocalDate eventDate;
         private String eventType;
         private UUID sireId;
+        private UUID maleAnimalId;
         private String sireTagNumber;
         private LocalDate expectedBirthDate;
+        private LocalDate expectedDate;
         private String pregnancyStatus;
         private String notes;
         private LocalDateTime createdAt;

@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/weight-records")
+@RequestMapping({"/api/v1/weight-records", "/api/v1/animal-weights"})
 @RequiredArgsConstructor
 @Tag(name = "Control de Pesos", description = "Historial de pesaje y desarrollo corporal")
 public class WeightRecordController {

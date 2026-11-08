@@ -8,6 +8,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -38,14 +39,39 @@ public class Product {
     @Column(name = "name", nullable = false, length = 150)
     private String name;
 
+    @Size(max = 80)
+    @Column(name = "sku", length = 80, unique = true)
+    private String sku;
+
     @Size(max = 100)
     @Column(name = "category", length = 100)
     private String category;
+
+    @Size(max = 80)
+    @Column(name = "product_type", length = 80)
+    private String productType;
 
     @NotBlank(message = "La unidad de medida es obligatoria")
     @Size(max = 30)
     @Column(name = "unit_of_measure", nullable = false, length = 30)
     private String unitOfMeasure;
+
+    @Builder.Default
+    @Column(name = "current_stock", nullable = false, precision = 14, scale = 3)
+    private BigDecimal currentStock = BigDecimal.ZERO;
+
+    @Column(name = "minimum_stock", precision = 14, scale = 3)
+    private BigDecimal minimumStock;
+
+    @Column(name = "reorder_point", precision = 14, scale = 3)
+    private BigDecimal reorderPoint;
+
+    @Column(name = "average_cost", precision = 14, scale = 4)
+    private BigDecimal averageCost;
+
+    @Builder.Default
+    @Column(name = "status", nullable = false, length = 30)
+    private String status = "active";
 
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;

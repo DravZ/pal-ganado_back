@@ -15,6 +15,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "paddocks", indexes = {
         @Index(name = "idx_paddocks_farm_id", columnList = "farm_id"),
+        @Index(name = "idx_paddocks_code", columnList = "code"),
         @Index(name = "idx_paddocks_status", columnList = "status")
 })
 @Getter
@@ -39,6 +40,10 @@ public class Paddock {
     @Column(name = "name", nullable = false, length = 100)
     private String name;
 
+    @Size(max = 50)
+    @Column(name = "code", length = 50)
+    private String code;
+
     @Column(name = "area_hectares", precision = 10, scale = 2)
     private BigDecimal areaHectares;
 
@@ -48,6 +53,9 @@ public class Paddock {
 
     @Column(name = "capacity_animal_units")
     private Integer capacityAnimalUnits;
+
+    @Column(name = "capacity")
+    private Integer capacity;
 
     @Builder.Default
     @Column(name = "status", nullable = false, length = 30)

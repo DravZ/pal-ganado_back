@@ -45,9 +45,21 @@ public class User {
     @Column(name = "email", nullable = false, unique = true, length = 150)
     private String email;
 
+    @Column(name = "password_hash", length = 100)
+    private String passwordHash;
+
     @Size(max = 30)
     @Column(name = "phone", length = 30)
     private String phone;
+
+    @Size(max = 50)
+    @Builder.Default
+    @Column(name = "role", nullable = false, length = 50)
+    private String role = "Perfil por confirmar";
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "farm_id")
+    private Farm farm;
 
     @Builder.Default
     @Column(name = "status", nullable = false, length = 30)

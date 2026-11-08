@@ -21,18 +21,25 @@ public class PaddockDTO {
         @Size(max = 100)
         private String name;
 
+        private String code;
         private BigDecimal areaHectares;
+        private BigDecimal hectares;
         private String forageType;
         private Integer capacityAnimalUnits;
+        private Integer capacity;
+        private String status;
     }
 
     @Data
     public static class UpdateRequest {
         @Size(max = 100)
         private String name;
+        private String code;
         private BigDecimal areaHectares;
+        private BigDecimal hectares;
         private String forageType;
         private Integer capacityAnimalUnits;
+        private Integer capacity;
         private String status;
     }
 
@@ -43,9 +50,12 @@ public class PaddockDTO {
         private UUID farmId;
         private String farmName;
         private String name;
+        private String code;
         private BigDecimal areaHectares;
+        private BigDecimal hectares;
         private String forageType;
         private Integer capacityAnimalUnits;
+        private Integer capacity;
         private String status;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;

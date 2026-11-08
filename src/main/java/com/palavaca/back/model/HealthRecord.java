@@ -50,6 +50,16 @@ public class HealthRecord {
     @Column(name = "diagnosis", length = 150)
     private String diagnosis;
 
+    @Column(name = "symptoms", columnDefinition = "TEXT")
+    private String symptoms;
+
+    @Column(name = "result", columnDefinition = "TEXT")
+    private String result;
+
+    @Size(max = 150)
+    @Column(name = "veterinarian_name", length = 150)
+    private String veterinarianName;
+
     @Column(name = "dosage", precision = 10, scale = 2)
     private BigDecimal dosage;
 

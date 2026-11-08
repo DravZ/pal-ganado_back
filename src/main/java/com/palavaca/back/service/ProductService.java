@@ -42,8 +42,15 @@ public class ProductService {
         Product product = Product.builder()
                 .organization(org)
                 .name(request.getName())
+                .sku(request.getSku())
                 .category(request.getCategory())
-                .unitOfMeasure(request.getUnitOfMeasure())
+                .productType(request.getProductType())
+                .unitOfMeasure(request.getUnitOfMeasure() != null ? request.getUnitOfMeasure() : request.getUnit())
+                .currentStock(request.getCurrentStock())
+                .minimumStock(request.getMinimumStock())
+                .reorderPoint(request.getReorderPoint())
+                .averageCost(request.getAverageCost())
+                .status(request.getStatus() != null ? request.getStatus() : "active")
                 .description(request.getDescription())
                 .build();
 
@@ -56,8 +63,16 @@ public class ProductService {
                 .orElseThrow(() -> new EntityNotFoundException("Producto no encontrado con ID: " + id));
 
         if (request.getName() != null) product.setName(request.getName());
+        if (request.getSku() != null) product.setSku(request.getSku());
         if (request.getCategory() != null) product.setCategory(request.getCategory());
+        if (request.getProductType() != null) product.setProductType(request.getProductType());
         if (request.getUnitOfMeasure() != null) product.setUnitOfMeasure(request.getUnitOfMeasure());
+        if (request.getUnit() != null) product.setUnitOfMeasure(request.getUnit());
+        if (request.getCurrentStock() != null) product.setCurrentStock(request.getCurrentStock());
+        if (request.getMinimumStock() != null) product.setMinimumStock(request.getMinimumStock());
+        if (request.getReorderPoint() != null) product.setReorderPoint(request.getReorderPoint());
+        if (request.getAverageCost() != null) product.setAverageCost(request.getAverageCost());
+        if (request.getStatus() != null) product.setStatus(request.getStatus());
         if (request.getDescription() != null) product.setDescription(request.getDescription());
 
         return mapToResponse(productRepository.save(product));
@@ -76,8 +91,16 @@ public class ProductService {
                 .id(p.getId())
                 .organizationId(p.getOrganization().getId())
                 .name(p.getName())
+                .sku(p.getSku())
                 .category(p.getCategory())
+                .productType(p.getProductType())
                 .unitOfMeasure(p.getUnitOfMeasure())
+                .unit(p.getUnitOfMeasure())
+                .currentStock(p.getCurrentStock())
+                .minimumStock(p.getMinimumStock())
+                .reorderPoint(p.getReorderPoint())
+                .averageCost(p.getAverageCost())
+                .status(p.getStatus())
                 .description(p.getDescription())
                 .createdAt(p.getCreatedAt())
                 .updatedAt(p.getUpdatedAt())

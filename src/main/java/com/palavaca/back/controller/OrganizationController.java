@@ -39,7 +39,7 @@ public class OrganizationController {
         return ResponseEntity.status(HttpStatus.CREATED).body(organizationService.create(request));
     }
 
-    @PutMapping("/{id}")
+    @RequestMapping(path = "/{id}", method = {RequestMethod.PUT, RequestMethod.PATCH})
     @Operation(summary = "Actualizar datos de una organización")
     public ResponseEntity<OrganizationDTO.Response> update(
             @PathVariable UUID id,

@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -20,11 +21,18 @@ public class ProductDTO {
         @Size(max = 150)
         private String name;
 
+        private String sku;
         private String category;
+        private String productType;
 
-        @NotBlank(message = "La unidad de medida es obligatoria")
         @Size(max = 30)
         private String unitOfMeasure;
+        private String unit;
+        private BigDecimal currentStock;
+        private BigDecimal minimumStock;
+        private BigDecimal reorderPoint;
+        private BigDecimal averageCost;
+        private String status;
 
         private String description;
     }
@@ -33,9 +41,17 @@ public class ProductDTO {
     public static class UpdateRequest {
         @Size(max = 150)
         private String name;
+        private String sku;
         private String category;
+        private String productType;
         @Size(max = 30)
         private String unitOfMeasure;
+        private String unit;
+        private BigDecimal currentStock;
+        private BigDecimal minimumStock;
+        private BigDecimal reorderPoint;
+        private BigDecimal averageCost;
+        private String status;
         private String description;
     }
 
@@ -45,8 +61,16 @@ public class ProductDTO {
         private UUID id;
         private UUID organizationId;
         private String name;
+        private String sku;
         private String category;
+        private String productType;
         private String unitOfMeasure;
+        private String unit;
+        private BigDecimal currentStock;
+        private BigDecimal minimumStock;
+        private BigDecimal reorderPoint;
+        private BigDecimal averageCost;
+        private String status;
         private String description;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;

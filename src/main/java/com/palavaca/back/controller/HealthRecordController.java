@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/health-records")
+@RequestMapping({"/api/v1/health-records", "/api/v1/health-events"})
 @RequiredArgsConstructor
 @Tag(name = "Registros Sanitarios", description = "Gestión de salud, vacunas y tratamientos por animal")
 public class HealthRecordController {

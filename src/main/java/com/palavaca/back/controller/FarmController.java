@@ -39,7 +39,7 @@ public class FarmController {
         return ResponseEntity.status(HttpStatus.CREATED).body(farmService.create(request));
     }
 
-    @PutMapping("/{id}")
+    @RequestMapping(path = "/{id}", method = {RequestMethod.PUT, RequestMethod.PATCH})
     @Operation(summary = "Actualizar datos de una finca")
     public ResponseEntity<FarmDTO.Response> update(
             @PathVariable UUID id,

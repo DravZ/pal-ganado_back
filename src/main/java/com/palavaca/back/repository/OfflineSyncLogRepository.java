@@ -10,4 +10,5 @@ import java.util.UUID;
 @Repository
 public interface OfflineSyncLogRepository extends JpaRepository<OfflineSyncLog, UUID> {
     List<OfflineSyncLog> findByUserIdAndSyncStatus(UUID userId, String syncStatus);
+    List<OfflineSyncLog> findBySyncStatusOrderByCreatedAtDesc(String syncStatus);
 }

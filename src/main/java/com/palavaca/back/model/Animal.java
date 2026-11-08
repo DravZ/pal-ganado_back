@@ -18,6 +18,7 @@ import java.util.UUID;
         @Index(name = "idx_animals_organization_id", columnList = "organization_id"),
         @Index(name = "idx_animals_farm_id", columnList = "farm_id"),
         @Index(name = "idx_animals_paddock_id", columnList = "paddock_id"),
+        @Index(name = "idx_animals_lot_id", columnList = "lot_id"),
         @Index(name = "idx_animals_tag_number", columnList = "tag_number"),
         @Index(name = "idx_animals_status", columnList = "status")
 })
@@ -46,6 +47,10 @@ public class Animal {
     @JoinColumn(name = "paddock_id")
     private Paddock paddock;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "lot_id")
+    private Lot lot;
+
     @NotBlank(message = "El arete o número de identificación es obligatorio")
     @Size(max = 50)
     @Column(name = "tag_number", nullable = false, length = 50)
@@ -54,6 +59,11 @@ public class Animal {
     @Size(max = 100)
     @Column(name = "name", length = 100)
     private String name;
+
+    @Size(max = 50)
+    @Builder.Default
+    @Column(name = "species", nullable = false, length = 50)
+    private String species = "bovino";
 
     @NotBlank(message = "El género es obligatorio (M/F)")
     @Size(max = 10)
@@ -80,6 +90,18 @@ public class Animal {
 
     @Column(name = "current_weight", precision = 8, scale = 2)
     private BigDecimal currentWeight;
+
+    @Column(name = "current_weight_date")
+    private LocalDate currentWeightDate;
+
+    @Column(name = "acquisition_date")
+    private LocalDate acquisitionDate;
+
+    @Column(name = "acquisition_cost", precision = 14, scale = 2)
+    private BigDecimal acquisitionCost;
+
+    @Column(name = "notes", columnDefinition = "TEXT")
+    private String notes;
 
     @Builder.Default
     @Column(name = "status", nullable = false, length = 30)

@@ -21,16 +21,30 @@ public class FarmDTO {
         @Size(max = 150)
         private String name;
 
+        private String code;
+        private String state;
+        private String municipality;
+        private String locality;
+        private String address;
         private String location;
         private BigDecimal totalAreaHectares;
+        private BigDecimal hectares;
+        private String status;
     }
 
     @Data
     public static class UpdateRequest {
         @Size(max = 150)
         private String name;
+        private String code;
+        private String state;
+        private String municipality;
+        private String locality;
+        private String address;
         private String location;
         private BigDecimal totalAreaHectares;
+        private BigDecimal hectares;
+        private String status;
     }
 
     @Data
@@ -39,8 +53,15 @@ public class FarmDTO {
         private UUID id;
         private UUID organizationId;
         private String name;
+        private String code;
+        private String state;
+        private String municipality;
+        private String locality;
+        private String address;
         private String location;
         private BigDecimal totalAreaHectares;
+        private BigDecimal hectares;
+        private String status;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
     }

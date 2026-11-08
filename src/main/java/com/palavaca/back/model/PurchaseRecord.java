@@ -46,6 +46,14 @@ public class PurchaseRecord {
     @JoinColumn(name = "medication_id")
     private Medication medication;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "farm_id")
+    private Farm farm;
+
+    @Size(max = 100)
+    @Column(name = "invoice_number", length = 100)
+    private String invoiceNumber;
+
     @NotNull(message = "La fecha de compra es obligatoria")
     @Column(name = "purchase_date", nullable = false)
     private LocalDate purchaseDate;
@@ -55,6 +63,12 @@ public class PurchaseRecord {
 
     @Column(name = "unit_price", precision = 12, scale = 2)
     private BigDecimal unitPrice;
+
+    @Column(name = "subtotal", precision = 14, scale = 2)
+    private BigDecimal subtotal;
+
+    @Column(name = "tax", precision = 14, scale = 2)
+    private BigDecimal tax;
 
     @NotNull(message = "El monto total es obligatorio")
     @Column(name = "total_amount", nullable = false, precision = 12, scale = 2)

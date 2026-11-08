@@ -45,6 +45,14 @@ public class Medication {
     @Column(name = "presentation", length = 50)
     private String presentation;
 
+    @Size(max = 100)
+    @Column(name = "concentration", length = 100)
+    private String concentration;
+
+    @Size(max = 50)
+    @Column(name = "route", length = 50)
+    private String route;
+
     @Size(max = 30)
     @Column(name = "default_unit", length = 30)
     private String defaultUnit;

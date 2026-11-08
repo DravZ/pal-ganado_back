@@ -42,10 +42,13 @@ public class PaddockService {
         Paddock paddock = Paddock.builder()
                 .farm(farm)
                 .name(request.getName())
-                .areaHectares(request.getAreaHectares())
+                .code(request.getCode())
+                .areaHectares(request.getHectares() != null ? request.getHectares() : request.getAreaHectares())
                 .forageType(request.getForageType())
-                .capacityAnimalUnits(request.getCapacityAnimalUnits())
-                .status("available")
+                .capacityAnimalUnits(request.getCapacityAnimalUnits() != null
+                        ? request.getCapacityAnimalUnits() : request.getCapacity())
+                .capacity(request.getCapacity() != null ? request.getCapacity() : request.getCapacityAnimalUnits())
+                .status(request.getStatus() != null ? request.getStatus() : "available")
                 .build();
 
         return mapToResponse(paddockRepository.save(paddock));
@@ -57,9 +60,15 @@ public class PaddockService {
                 .orElseThrow(() -> new EntityNotFoundException("Potrero no encontrado con ID: " + id));
 
         if (request.getName() != null) paddock.setName(request.getName());
+        if (request.getCode() != null) paddock.setCode(request.getCode());
         if (request.getAreaHectares() != null) paddock.setAreaHectares(request.getAreaHectares());
+        if (request.getHectares() != null) paddock.setAreaHectares(request.getHectares());
         if (request.getForageType() != null) paddock.setForageType(request.getForageType());
         if (request.getCapacityAnimalUnits() != null) paddock.setCapacityAnimalUnits(request.getCapacityAnimalUnits());
+        if (request.getCapacity() != null) {
+            paddock.setCapacity(request.getCapacity());
+            paddock.setCapacityAnimalUnits(request.getCapacity());
+        }
         if (request.getStatus() != null) paddock.setStatus(request.getStatus());
 
         return mapToResponse(paddockRepository.save(paddock));
@@ -79,9 +88,12 @@ public class PaddockService {
                 .farmId(p.getFarm().getId())
                 .farmName(p.getFarm().getName())
                 .name(p.getName())
+                .code(p.getCode())
                 .areaHectares(p.getAreaHectares())
+                .hectares(p.getAreaHectares())
                 .forageType(p.getForageType())
                 .capacityAnimalUnits(p.getCapacityAnimalUnits())
+                .capacity(p.getCapacity() != null ? p.getCapacity() : p.getCapacityAnimalUnits())
                 .status(p.getStatus())
                 .createdAt(p.getCreatedAt())
                 .updatedAt(p.getUpdatedAt())
