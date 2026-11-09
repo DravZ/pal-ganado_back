@@ -104,6 +104,10 @@ public class FrontendResourcesController {
         HealthRecord healthRecord = request.healthEventId() == null ? null
                 : healthRecordRepository.findById(request.healthEventId())
                 .orElseThrow(() -> new EntityNotFoundException("Evento de salud no encontrado"));
+        if (healthRecord != null
+                && !healthRecord.getAnimal().getId().equals(request.animalId())) {
+            throw new org.springframework.web.server.ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
         Treatment treatment = Treatment.builder()
                 .animal(requireAnimal(request.animalId()))
                 .healthRecord(healthRecord)
@@ -123,13 +127,19 @@ public class FrontendResourcesController {
     }
 
     @GetMapping("/vaccinations")
-    public List<VaccinationResponse> getVaccinations(@RequestParam("animal_id") UUID animalId) {
+    public List<VaccinationResponse> getVaccinations(
+            Authentication authentication,
+            @RequestParam("animal_id") UUID animalId) {
+        authorization.requireAnimal(authentication, animalId);
         return vaccinationRepository.findByAnimalIdOrderByApplicationDateDesc(animalId).stream()
                 .map(this::vaccinationResponse).toList();
     }
 
     @PostMapping("/vaccinations")
-    public ResponseEntity<VaccinationResponse> createVaccination(@Valid @RequestBody VaccinationRequest request) {
+    public ResponseEntity<VaccinationResponse> createVaccination(
+            Authentication authentication,
+            @Valid @RequestBody VaccinationRequest request) {
+        authorization.requireAnimal(authentication, request.animalId());
         Vaccination vaccination = Vaccination.builder()
                 .animal(requireAnimal(request.animalId()))
                 .vaccineName(request.vaccineName())
