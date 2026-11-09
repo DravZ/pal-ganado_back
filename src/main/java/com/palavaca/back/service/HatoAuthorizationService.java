@@ -68,6 +68,16 @@ public class HatoAuthorizationService {
         }
     }
 
+    public User requireOrganizationAdmin(Authentication authentication, UUID organizationId) {
+        User user = currentUser(authentication);
+        if (organizationId == null
+                || !user.getOrganization().getId().equals(organizationId)
+                || !isOrganizationAdmin(user)) {
+            forbidden();
+        }
+        return user;
+    }
+
     public Farm requireFarm(Authentication authentication, UUID farmId) {
         User user = currentUser(authentication);
         Farm farm = farmRepository.findById(farmId)
