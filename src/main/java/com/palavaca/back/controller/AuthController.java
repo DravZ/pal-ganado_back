@@ -28,6 +28,12 @@ import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
+import java.util.Locale;
+import java.util.UUID;
+
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
@@ -35,6 +41,9 @@ import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
 public class AuthController {
+
+    private static final String SESSION_EXPIRY_ATTRIBUTE = AuthController.class.getName() + ".expiresAt";
+    private static final int SESSION_DURATION_SECONDS = (int) Duration.ofDays(7).toSeconds();
 
     private final AuthenticationManager authenticationManager;
     private final SecurityContextRepository securityContextRepository;
@@ -53,6 +62,11 @@ public class AuthController {
     public AuthDTO.SessionResponse login(@Valid @RequestBody AuthDTO.LoginRequest request,
                                          HttpServletRequest servletRequest,
                                          HttpServletResponse servletResponse) {
+        HttpSession oldSession = servletRequest.getSession(false);
+        if (oldSession != null) {
+            oldSession.invalidate();
+        }
+
         Authentication authentication;
         try {
             authentication = authenticationManager.authenticate(
@@ -65,9 +79,41 @@ public class AuthController {
         context.setAuthentication(authentication);
         SecurityContextHolder.setContext(context);
         securityContextRepository.saveContext(context, servletRequest, servletResponse);
+        HttpSession session = servletRequest.getSession(true);
+        Instant expiresAt = Instant.now().plusSeconds(SESSION_DURATION_SECONDS);
+        session.setMaxInactiveInterval(SESSION_DURATION_SECONDS);
+        session.setAttribute(SESSION_EXPIRY_ATTRIBUTE, expiresAt);
         User user = userRepository.findByEmail(authentication.getName())
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario autenticado no encontrado"));
-        return new AuthDTO.SessionResponse(userService.findById(user.getId()));
+        return sessionResponse(user, expiresAt);
+    }
+
+    @GetMapping("/auth/session")
+    public AuthDTO.SessionResponse currentSession(Authentication authentication, HttpServletRequest request) {
+        User user = requireAuthenticatedUser(authentication);
+        HttpSession session = request.getSession(false);
+        if (session == null) {
+            throw new ResponseStatusException(UNAUTHORIZED, "La sesión expiró");
+        }
+        Instant expiresAt = sessionExpiry(session);
+        return sessionResponse(user, expiresAt);
+    }
+
+    @PostMapping("/auth/session/renew")
+    public AuthDTO.SessionResponse renewSession(Authentication authentication,
+                                                HttpServletRequest request,
+                                                HttpServletResponse response) {
+        User user = requireAuthenticatedUser(authentication);
+        HttpSession session = request.getSession(false);
+        if (session == null) {
+            throw new ResponseStatusException(UNAUTHORIZED, "La sesión expiró");
+        }
+
+        Instant expiresAt = Instant.now().plusSeconds(SESSION_DURATION_SECONDS);
+        session.setMaxInactiveInterval(SESSION_DURATION_SECONDS);
+        session.setAttribute(SESSION_EXPIRY_ATTRIBUTE, expiresAt);
+        refreshSessionCookie(request, response, session.getId());
+        return sessionResponse(user, expiresAt);
     }
 
     @DeleteMapping("/auth/session")
@@ -77,6 +123,7 @@ public class AuthController {
         securityContextRepository.saveContext(SecurityContextHolder.createEmptyContext(), request, response);
         HttpSession session = request.getSession(false);
         if (session != null) session.invalidate();
+        response.addHeader("Set-Cookie", sessionCookie(request, "", 0));
     }
 
     @PostMapping("/registrations")
@@ -122,7 +169,10 @@ public class AuthController {
                 .role("Administrador")
                 .status("active")
                 .build());
-        return new AuthDTO.SessionResponse(userService.findById(user.getId()));
+        return new AuthDTO.SessionResponse(
+                userService.findById(user.getId()),
+                null,
+                farm == null ? List.of() : List.of(farm.getId()));
     }
 
     @PostMapping("/auth/password-resets")
@@ -140,5 +190,52 @@ public class AuthController {
         User user = userRepository.findByEmail(authentication.getName())
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario autenticado no encontrado"));
         return userService.findById(user.getId());
+    }
+
+    private User requireAuthenticatedUser(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new ResponseStatusException(UNAUTHORIZED, "La sesión no está autenticada");
+        }
+        return userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new UsernameNotFoundException("Usuario autenticado no encontrado"));
+    }
+
+    private Instant sessionExpiry(HttpSession session) {
+        Object expiresAt = session.getAttribute(SESSION_EXPIRY_ATTRIBUTE);
+        if (expiresAt instanceof Instant instant) return instant;
+        Instant fallback = Instant.ofEpochMilli(session.getLastAccessedTime())
+                .plusSeconds(session.getMaxInactiveInterval());
+        session.setAttribute(SESSION_EXPIRY_ATTRIBUTE, fallback);
+        return fallback;
+    }
+
+    private void refreshSessionCookie(HttpServletRequest request,
+                                      HttpServletResponse response,
+                                      String sessionId) {
+        response.addHeader("Set-Cookie", sessionCookie(request, sessionId, SESSION_DURATION_SECONDS));
+    }
+
+    private String sessionCookie(HttpServletRequest request, String value, int maxAge) {
+        String cookieName = request.getServletContext().getSessionCookieConfig().getName();
+        if (cookieName == null || cookieName.isBlank()) cookieName = "JSESSIONID";
+        return cookieName + "=" + value + "; Path=/; Max-Age=" + maxAge
+                + "; HttpOnly; Secure; SameSite=Lax";
+    }
+
+    private AuthDTO.SessionResponse sessionResponse(User user, Instant expiresAt) {
+        List<UUID> farmIds;
+        if (user.getRole() != null && user.getRole().toLowerCase(Locale.ROOT).contains("admin")) {
+            farmIds = farmRepository.findByOrganizationId(user.getOrganization().getId()).stream()
+                    .filter(farm -> "active".equalsIgnoreCase(farm.getStatus()))
+                    .map(Farm::getId)
+                    .toList();
+        } else if (user.getFarm() != null
+                && user.getFarm().getOrganization().getId().equals(user.getOrganization().getId())
+                && "active".equalsIgnoreCase(user.getFarm().getStatus())) {
+            farmIds = List.of(user.getFarm().getId());
+        } else {
+            farmIds = List.of();
+        }
+        return new AuthDTO.SessionResponse(userService.findById(user.getId()), expiresAt, farmIds);
     }
 }

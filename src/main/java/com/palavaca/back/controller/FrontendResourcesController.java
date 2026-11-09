@@ -3,11 +3,13 @@ package com.palavaca.back.controller;
 import com.palavaca.back.dto.FrontendResourceDTO.*;
 import com.palavaca.back.model.*;
 import com.palavaca.back.repository.*;
+import com.palavaca.back.service.HatoAuthorizationService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -38,9 +40,11 @@ public class FrontendResourcesController {
     private final MovementRepository movementRepository;
     private final MovementAnimalRepository movementAnimalRepository;
     private final AlertRepository alertRepository;
+    private final HatoAuthorizationService authorization;
 
     @GetMapping("/lots")
-    public List<LotResponse> getLots(@RequestParam("farm_id") UUID farmId) {
+    public List<LotResponse> getLots(Authentication authentication, @RequestParam("farm_id") UUID farmId) {
+        authorization.requireFarm(authentication, farmId);
         return lotRepository.findByFarmId(farmId).stream().map(this::lotResponse).toList();
     }
 
@@ -62,12 +66,16 @@ public class FrontendResourcesController {
     }
 
     @GetMapping("/animal-identifiers")
-    public List<IdentifierResponse> getIdentifiers(@RequestParam("animal_id") UUID animalId) {
+    public List<IdentifierResponse> getIdentifiers(Authentication authentication, @RequestParam("animal_id") UUID animalId) {
+        authorization.requireAnimal(authentication, animalId);
         return identifierRepository.findByAnimalId(animalId).stream().map(this::identifierResponse).toList();
     }
 
     @PostMapping("/animal-identifiers")
-    public ResponseEntity<IdentifierResponse> createIdentifier(@Valid @RequestBody IdentifierRequest request) {
+    public ResponseEntity<IdentifierResponse> createIdentifier(
+            Authentication authentication,
+            @Valid @RequestBody IdentifierRequest request) {
+        authorization.requireAnimal(authentication, request.animalId());
         AnimalIdentifier identifier = AnimalIdentifier.builder()
                 .animal(requireAnimal(request.animalId()))
                 .identifierType(request.identifierType())
@@ -81,14 +89,18 @@ public class FrontendResourcesController {
     }
 
     @GetMapping("/treatments")
-    public List<TreatmentResponse> getTreatments(@RequestParam("animal_id") UUID animalId) {
+    public List<TreatmentResponse> getTreatments(Authentication authentication, @RequestParam("animal_id") UUID animalId) {
+        authorization.requireAnimal(authentication, animalId);
         return treatmentRepository.findByAnimalIdOrderByStartDateDesc(animalId).stream()
                 .map(this::treatmentResponse).toList();
     }
 
     @PostMapping("/treatments")
     @Transactional
-    public ResponseEntity<TreatmentResponse> createTreatment(@Valid @RequestBody TreatmentRequest request) {
+    public ResponseEntity<TreatmentResponse> createTreatment(
+            Authentication authentication,
+            @Valid @RequestBody TreatmentRequest request) {
+        authorization.requireAnimal(authentication, request.animalId());
         HealthRecord healthRecord = request.healthEventId() == null ? null
                 : healthRecordRepository.findById(request.healthEventId())
                 .orElseThrow(() -> new EntityNotFoundException("Evento de salud no encontrado"));
@@ -227,14 +239,34 @@ public class FrontendResourcesController {
     }
 
     @GetMapping("/movements")
-    public List<MovementResponse> getMovements(@RequestParam("farm_id") UUID farmId) {
+    public List<MovementResponse> getMovements(Authentication authentication, @RequestParam("farm_id") UUID farmId) {
+        authorization.requireFarm(authentication, farmId);
         return movementRepository.findByFarmIdOrderByMovementDateDesc(farmId).stream()
                 .map(this::movementResponse).toList();
     }
 
     @PostMapping("/movements")
     @Transactional
-    public ResponseEntity<MovementResponse> createMovement(@Valid @RequestBody MovementRequest request) {
+    public ResponseEntity<MovementResponse> createMovement(
+            Authentication authentication,
+            @Valid @RequestBody MovementRequest request) {
+        authorization.requireFarm(authentication, request.farmId());
+        if (request.originLotId() != null
+                && !request.farmId().equals(authorization.requireLot(authentication, request.originLotId()).getFarm().getId())) {
+            throw new org.springframework.web.server.ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        if (request.destinationLotId() != null
+                && !request.farmId().equals(authorization.requireLot(authentication, request.destinationLotId()).getFarm().getId())) {
+            throw new org.springframework.web.server.ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        if (request.animals() != null) {
+            for (MovementAnimalRequest item : request.animals()) {
+                Animal animal = authorization.requireAnimal(authentication, item.animalId());
+                if (animal.getFarm() == null || !request.farmId().equals(animal.getFarm().getId())) {
+                    throw new org.springframework.web.server.ResponseStatusException(HttpStatus.FORBIDDEN);
+                }
+            }
+        }
         Movement movement = movementRepository.save(Movement.builder()
                 .farm(requireFarm(request.farmId()))
                 .originLot(request.originLotId() == null ? null : requireLot(request.originLotId()))

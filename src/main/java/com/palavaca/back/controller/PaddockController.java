@@ -1,6 +1,7 @@
 package com.palavaca.back.controller;
 
 import com.palavaca.back.dto.PaddockDTO;
+import com.palavaca.back.service.HatoAuthorizationService;
 import com.palavaca.back.service.PaddockService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -8,6 +9,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,36 +22,47 @@ import java.util.UUID;
 public class PaddockController {
 
     private final PaddockService paddockService;
+    private final HatoAuthorizationService authorization;
 
     @GetMapping
     @Operation(summary = "Obtener potreros de una finca")
-    public ResponseEntity<List<PaddockDTO.Response>> getByFarm(@RequestParam("farm_id") UUID farmId) {
+    public ResponseEntity<List<PaddockDTO.Response>> getByFarm(
+            Authentication authentication,
+            @RequestParam("farm_id") UUID farmId) {
+        authorization.requireFarm(authentication, farmId);
         return ResponseEntity.ok(paddockService.findByFarmId(farmId));
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Obtener potrero por ID")
-    public ResponseEntity<PaddockDTO.Response> getById(@PathVariable UUID id) {
+    public ResponseEntity<PaddockDTO.Response> getById(Authentication authentication, @PathVariable UUID id) {
+        authorization.requirePaddock(authentication, id);
         return ResponseEntity.ok(paddockService.findById(id));
     }
 
     @PostMapping
     @Operation(summary = "Registrar nuevo potrero")
-    public ResponseEntity<PaddockDTO.Response> create(@Valid @RequestBody PaddockDTO.CreateRequest request) {
+    public ResponseEntity<PaddockDTO.Response> create(
+            Authentication authentication,
+            @Valid @RequestBody PaddockDTO.CreateRequest request) {
+        authorization.requireFarm(authentication, request.getFarmId());
         return ResponseEntity.status(HttpStatus.CREATED).body(paddockService.create(request));
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Actualizar datos de un potrero")
     public ResponseEntity<PaddockDTO.Response> update(
+            Authentication authentication,
             @PathVariable UUID id,
             @Valid @RequestBody PaddockDTO.UpdateRequest request) {
+        authorization.requirePaddock(authentication, id);
         return ResponseEntity.ok(paddockService.update(id, request));
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Eliminar un potrero")
-    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+    public ResponseEntity<Void> delete(Authentication authentication, @PathVariable UUID id) {
+        authorization.requirePaddock(authentication, id);
         paddockService.delete(id);
         return ResponseEntity.noContent().build();
     }

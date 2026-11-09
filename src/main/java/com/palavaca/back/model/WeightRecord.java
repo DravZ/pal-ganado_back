@@ -27,6 +27,11 @@ public class WeightRecord {
     @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
+    @Version
+    @Column(name = "version", nullable = false, columnDefinition = "bigint default 0")
+    @Builder.Default
+    private Long version = 0L;
+
     @NotNull(message = "El animal es obligatorio")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "animal_id", nullable = false)

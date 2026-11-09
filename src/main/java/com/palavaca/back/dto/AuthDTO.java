@@ -6,6 +6,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
 
 public final class AuthDTO {
 
@@ -36,7 +39,7 @@ public final class AuthDTO {
             @Email @Size(max = 150) String orgEmail,
             @Valid FarmRegistration farm) {}
 
-    public record SessionResponse(UserDTO.Response user) {}
+    public record SessionResponse(UserDTO.Response user, Instant expiresAt, List<UUID> farmIds) {}
 
     public record CsrfTokenResponse(String token) {}
 

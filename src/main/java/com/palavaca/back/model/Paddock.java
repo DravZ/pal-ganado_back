@@ -30,6 +30,11 @@ public class Paddock {
     @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
+    @Version
+    @Column(name = "version", nullable = false, columnDefinition = "bigint default 0")
+    @Builder.Default
+    private Long version = 0L;
+
     @NotNull(message = "La finca es obligatoria")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "farm_id", nullable = false)
