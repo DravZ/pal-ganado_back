@@ -203,17 +203,26 @@ public class FrontendResourcesController {
     }
 
     @GetMapping("/expenses")
-    public List<ExpenseResponse> getExpenses(@RequestParam("farm_id") UUID farmId) {
+    public List<ExpenseResponse> getExpenses(Authentication authentication, @RequestParam("farm_id") UUID farmId) {
+        authorization.requireFarm(authentication, farmId);
         return expenseRepository.findByFarmIdOrderByExpenseDateDesc(farmId).stream()
                 .map(this::expenseResponse).toList();
     }
 
     @PostMapping("/expenses")
-    public ResponseEntity<ExpenseResponse> createExpense(@Valid @RequestBody ExpenseRequest request) {
+    public ResponseEntity<ExpenseResponse> createExpense(
+            Authentication authentication,
+            @Valid @RequestBody ExpenseRequest request) {
+        Farm farm = authorization.requireFarm(authentication, request.farmId());
+        Supplier supplier = request.supplierId() == null ? null : supplierRepository.findById(request.supplierId())
+                .orElseThrow(() -> new EntityNotFoundException("Proveedor no encontrado"));
+        if (supplier != null
+                && !supplier.getOrganization().getId().equals(farm.getOrganization().getId())) {
+            throw new org.springframework.web.server.ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
         Expense expense = Expense.builder()
-                .farm(requireFarm(request.farmId()))
-                .supplier(request.supplierId() == null ? null : supplierRepository.findById(request.supplierId())
-                        .orElseThrow(() -> new EntityNotFoundException("Proveedor no encontrado")))
+                .farm(farm)
+                .supplier(supplier)
                 .expenseDate(request.expenseDate())
                 .category(request.category())
                 .description(request.description())
@@ -226,19 +235,37 @@ public class FrontendResourcesController {
     }
 
     @GetMapping("/cost-allocations")
-    public List<AllocationResponse> getCostAllocations(@RequestParam("farm_id") UUID farmId) {
+    public List<AllocationResponse> getCostAllocations(
+            Authentication authentication,
+            @RequestParam("farm_id") UUID farmId) {
+        authorization.requireFarm(authentication, farmId);
         return allocationRepository.findByFarmIdOrderByAllocationDateDesc(farmId).stream()
                 .map(this::allocationResponse).toList();
     }
 
     @PostMapping("/cost-allocations")
-    public ResponseEntity<AllocationResponse> createCostAllocation(@Valid @RequestBody AllocationRequest request) {
+    public ResponseEntity<AllocationResponse> createCostAllocation(
+            Authentication authentication,
+            @Valid @RequestBody AllocationRequest request) {
+        Farm farm = authorization.requireFarm(authentication, request.farmId());
+        Expense expense = request.expenseId() == null ? null : expenseRepository.findById(request.expenseId())
+                .orElseThrow(() -> new EntityNotFoundException("Gasto no encontrado"));
+        if (expense != null && !farm.getId().equals(expense.getFarm().getId())) {
+            throw new org.springframework.web.server.ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        Lot lot = request.lotId() == null ? null : authorization.requireLot(authentication, request.lotId());
+        if (lot != null && !farm.getId().equals(lot.getFarm().getId())) {
+            throw new org.springframework.web.server.ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        Animal animal = request.animalId() == null ? null : authorization.requireAnimal(authentication, request.animalId());
+        if (animal != null && (animal.getFarm() == null || !farm.getId().equals(animal.getFarm().getId()))) {
+            throw new org.springframework.web.server.ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
         CostAllocation allocation = CostAllocation.builder()
-                .farm(requireFarm(request.farmId()))
-                .expense(request.expenseId() == null ? null : expenseRepository.findById(request.expenseId())
-                        .orElseThrow(() -> new EntityNotFoundException("Gasto no encontrado")))
-                .animal(request.animalId() == null ? null : requireAnimal(request.animalId()))
-                .lot(request.lotId() == null ? null : requireLot(request.lotId()))
+                .farm(farm)
+                .expense(expense)
+                .animal(animal)
+                .lot(lot)
                 .allocationType(request.allocationType())
                 .amount(request.amount())
                 .allocationDate(request.allocationDate())
