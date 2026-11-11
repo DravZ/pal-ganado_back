@@ -2,7 +2,9 @@ package com.palavaca.back;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.palavaca.back.dto.AuthDTO;
 import jakarta.servlet.http.Cookie;
+import jakarta.validation.Validator;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -13,6 +15,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -30,6 +33,9 @@ class BackApplicationTests {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private Validator validator;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -89,5 +95,41 @@ class BackApplicationTests {
                         .content("{\"email\":\"missing-user@example.invalid\",\"password\":\"wrong\"}"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(header().string("Access-Control-Allow-Origin", FRONTEND_ORIGIN));
+    }
+
+    @Test
+    void registrationValidationRejectsWeakPasswords() {
+        AuthDTO.RegistrationRequest request = new AuthDTO.RegistrationRequest(
+                "Usuario QA",
+                "123456789",
+                "qa@example.invalid",
+                "weakpassword1!",
+                "Organización QA",
+                null,
+                null,
+                null,
+                null,
+                null);
+
+        assertTrue(validator.validate(request).stream()
+                .anyMatch(violation -> violation.getPropertyPath().toString().equals("userPass")));
+    }
+
+    @Test
+    void registrationValidationAcceptsPasswordsLongerThanEightCharacters() {
+        AuthDTO.RegistrationRequest request = new AuthDTO.RegistrationRequest(
+                "Usuario QA",
+                "123456789",
+                "qa@example.invalid",
+                "Passwo9!x",
+                "Organización QA",
+                null,
+                null,
+                null,
+                null,
+                null);
+
+        assertFalse(validator.validate(request).stream()
+                .anyMatch(violation -> violation.getPropertyPath().toString().equals("userPass")));
     }
 }

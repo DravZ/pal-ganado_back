@@ -3,6 +3,7 @@ package com.palavaca.back.dto;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
@@ -31,7 +32,12 @@ public final class AuthDTO {
             @NotBlank @Size(max = 150) String userName,
             @Size(max = 30) String userPhone,
             @NotBlank @Email @Size(max = 150) String userEmail,
-            @NotBlank @Size(min = 8, max = 100) String userPass,
+            @NotBlank
+            @Size(min = 9, max = 72, message = "La contraseña debe tener entre 9 y 72 caracteres")
+            @Pattern(
+                    regexp = "^(?=\\S+$)(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9\\s]).+$",
+                    message = "La contraseña debe incluir mayúscula, minúscula, número y carácter especial, sin espacios")
+            String userPass,
             @NotBlank @Size(max = 150) String orgName,
             @Size(max = 200) String orgLegalName,
             @Size(max = 30) String orgTaxId,

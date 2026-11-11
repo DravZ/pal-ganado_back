@@ -32,6 +32,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -139,6 +140,9 @@ public class AuthController {
     @ResponseStatus(HttpStatus.CREATED)
     @org.springframework.transaction.annotation.Transactional
     public AuthDTO.SessionResponse register(@Valid @RequestBody AuthDTO.RegistrationRequest request) {
+        if (request.userPass().getBytes(StandardCharsets.UTF_8).length > 72) {
+            throw new ResponseStatusException(BAD_REQUEST, "La contraseña no puede superar 72 bytes");
+        }
         if (userRepository.existsByEmail(request.userEmail())) {
             throw new ResponseStatusException(BAD_REQUEST, "El correo ya está registrado");
         }
