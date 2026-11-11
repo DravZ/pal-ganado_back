@@ -66,9 +66,9 @@ class BackApplicationTests {
     }
 
     @Test
-    void sessionEndpointRequiresAuthenticationAndReturnsCorsHeaders() throws Exception {
+    void sessionEndpointReturnsNoContentWhenUnauthenticatedAndIncludesCorsHeaders() throws Exception {
         mockMvc.perform(get("/api/v1/auth/session").header("Origin", FRONTEND_ORIGIN))
-                .andExpect(status().isUnauthorized())
+                .andExpect(status().isNoContent())
                 .andExpect(header().string("Access-Control-Allow-Origin", FRONTEND_ORIGIN));
     }
 

@@ -15,10 +15,12 @@ import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -89,14 +91,21 @@ public class AuthController {
     }
 
     @GetMapping("/auth/session")
-    public AuthDTO.SessionResponse currentSession(Authentication authentication, HttpServletRequest request) {
+    public ResponseEntity<AuthDTO.SessionResponse> currentSession(
+            Authentication authentication,
+            HttpServletRequest request) {
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || authentication instanceof AnonymousAuthenticationToken) {
+            return ResponseEntity.noContent().build();
+        }
         User user = requireAuthenticatedUser(authentication);
         HttpSession session = request.getSession(false);
         if (session == null) {
             throw new ResponseStatusException(UNAUTHORIZED, "La sesión expiró");
         }
         Instant expiresAt = sessionExpiry(session);
-        return sessionResponse(user, expiresAt);
+        return ResponseEntity.ok(sessionResponse(user, expiresAt));
     }
 
     @PostMapping("/auth/session/renew")
