@@ -49,14 +49,24 @@ public class FrontendResourcesController {
     }
 
     @PostMapping("/lots")
-    public ResponseEntity<LotResponse> createLot(@Valid @RequestBody LotRequest request) {
+    public ResponseEntity<LotResponse> createLot(
+            Authentication authentication,
+            @Valid @RequestBody LotRequest request) {
+        Farm farm = authorization.requireFarm(authentication, request.farmId());
+        Paddock currentPaddock = request.currentPaddockId() == null
+                ? null
+                : authorization.requirePaddock(authentication, request.currentPaddockId());
+        if (currentPaddock != null
+                && !farm.getId().equals(currentPaddock.getFarm().getId())) {
+            throw new org.springframework.web.server.ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
         Lot lot = Lot.builder()
-                .farm(requireFarm(request.farmId()))
+                .farm(farm)
                 .name(request.name())
                 .code(request.code())
                 .lotType(request.lotType())
                 .purpose(request.purpose())
-                .currentPaddock(request.currentPaddockId() == null ? null : requirePaddock(request.currentPaddockId()))
+                .currentPaddock(currentPaddock)
                 .startDate(request.startDate())
                 .endDate(request.endDate())
                 .status(request.status() == null ? "active" : request.status())
