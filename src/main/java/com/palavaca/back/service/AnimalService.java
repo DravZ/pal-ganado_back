@@ -15,10 +15,13 @@ import com.palavaca.back.repository.PaddockRepository;
 import com.palavaca.back.repository.LotRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 @Service
@@ -58,6 +61,17 @@ public class AnimalService {
         Organization org = organizationRepository.findById(request.getOrganizationId())
                 .orElseThrow(() -> new EntityNotFoundException("Organización no encontrada con ID: " + request.getOrganizationId()));
 
+        String identifierCode = normalizeIdentifier(request.getIdentifierCode());
+        String tagNumber = normalizeIdentifier(request.getTagNumber());
+        if (tagNumber == null) tagNumber = identifierCode;
+        if (tagNumber == null) {
+            throw new IllegalArgumentException("El arete o identificador es obligatorio");
+        }
+        assertIdentifierAvailable(org.getId(), tagNumber, null);
+        if (identifierCode != null && !identifierCode.equalsIgnoreCase(tagNumber)) {
+            assertIdentifierAvailable(org.getId(), identifierCode, null);
+        }
+
         Farm farm = null;
         if (request.getFarmId() != null) {
             farm = farmRepository.findById(request.getFarmId())
@@ -93,7 +107,7 @@ public class AnimalService {
                 .farm(farm)
                 .paddock(paddock)
                 .lot(lot)
-                .tagNumber(request.getTagNumber() != null ? request.getTagNumber() : request.getIdentifierCode())
+                .tagNumber(tagNumber)
                 .name(request.getName())
                 .gender(request.getGender())
                 .species(request.getSpecies())
@@ -113,16 +127,14 @@ public class AnimalService {
                 .build();
 
         Animal savedAnimal = animalRepository.save(animal);
-        if (request.getIdentifierCode() != null && !request.getIdentifierCode().isBlank()) {
+        if (identifierCode != null) {
             identifierRepository.save(AnimalIdentifier.builder()
                     .animal(savedAnimal)
                     .identifierType(request.getIdentifierType() != null ? request.getIdentifierType() : "ARETE_VISUAL")
-                    .identifier(request.getIdentifierCode())
+                    .identifier(identifierCode)
                     .official(Boolean.TRUE.equals(request.getIsOfficial()))
                     .current(request.getIsCurrent() == null || request.getIsCurrent())
                     .build());
-        } else if (request.getTagNumber() == null || request.getTagNumber().isBlank()) {
-            throw new IllegalArgumentException("El arete o identificador es obligatorio");
         }
         return mapToResponse(savedAnimal);
     }
@@ -150,7 +162,14 @@ public class AnimalService {
             animal.setLot(lot);
         }
 
-        if (request.getTagNumber() != null) animal.setTagNumber(request.getTagNumber());
+        if (request.getTagNumber() != null) {
+            String tagNumber = normalizeIdentifier(request.getTagNumber());
+            if (tagNumber == null) {
+                throw new IllegalArgumentException("El arete o identificador es obligatorio");
+            }
+            assertIdentifierAvailable(animal.getOrganization().getId(), tagNumber, animal.getId());
+            animal.setTagNumber(tagNumber);
+        }
         if (request.getName() != null) animal.setName(request.getName());
         if (request.getGender() != null) animal.setGender(request.getGender());
         if (request.getSpecies() != null) animal.setSpecies(request.getSpecies());
@@ -178,6 +197,21 @@ public class AnimalService {
         }
 
         return mapToResponse(animalRepository.save(animal));
+    }
+
+    private void assertIdentifierAvailable(UUID organizationId, String value, UUID excludeAnimalId) {
+        String normalized = value.toLowerCase(Locale.ROOT);
+        if (animalRepository.existsIdentifier(organizationId, normalized, excludeAnimalId)
+                || identifierRepository.existsIdentifier(organizationId, normalized, excludeAnimalId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "El identificador \"" + value + "\" ya está registrado en esta organización.");
+        }
+    }
+
+    private String normalizeIdentifier(String value) {
+        if (value == null || value.isBlank()) return null;
+        return value.trim();
     }
 
     @Transactional
