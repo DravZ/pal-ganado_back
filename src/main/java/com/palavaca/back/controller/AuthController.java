@@ -219,7 +219,7 @@ public class AuthController {
         String cookieName = request.getServletContext().getSessionCookieConfig().getName();
         if (cookieName == null || cookieName.isBlank()) cookieName = "JSESSIONID";
         return cookieName + "=" + value + "; Path=/; Max-Age=" + maxAge
-                + "; HttpOnly; Secure; SameSite=Lax";
+                + "; HttpOnly; Secure; SameSite=None";
     }
 
     private AuthDTO.SessionResponse sessionResponse(User user, Instant expiresAt) {

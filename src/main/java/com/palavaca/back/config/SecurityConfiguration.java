@@ -12,6 +12,7 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -110,7 +111,15 @@ public class SecurityConfiguration {
                 .authenticationProvider(authenticationProvider)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/api/v1/auth/**", "/api/v1/registrations",
+                        .requestMatchers(HttpMethod.GET, "/api/v1/auth/csrf").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/session",
+                                "/api/v1/auth/password-resets", "/api/v1/registrations").permitAll()
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/auth/session").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/auth/session")
+                        .authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/session/renew")
+                        .authenticated()
+                        .requestMatchers(
                                 "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated())
                 .addFilterAfter(idempotencyFilter, AuthorizationFilter.class)
@@ -129,7 +138,7 @@ public class SecurityConfiguration {
         repository.setCookieCustomizer(cookie -> cookie
                 .secure(true)
                 .httpOnly(true)
-                .sameSite("Lax")
+                .sameSite("None")
                 .path("/"));
         return repository;
     }
