@@ -34,19 +34,20 @@ public class AnimalController {
     public ResponseEntity<List<AnimalDTO.Response>> getAnimals(
             Authentication authentication,
             @RequestParam("organization_id") UUID organizationId,
-            @RequestParam(value = "farm_id", required = false) UUID farmId) {
+            @RequestParam(value = "farm_id", required = false) UUID farmId,
+            @RequestParam(value = "include_photo", defaultValue = "false") boolean includePhoto) {
         authorization.requireOrganization(authentication, organizationId);
         if (farmId != null) {
             authorization.requireFarm(authentication, farmId);
-            return ResponseEntity.ok(animalService.findByFarmId(farmId));
+            return ResponseEntity.ok(animalService.findByFarmId(farmId, includePhoto));
         }
         User user = authorization.currentUser(authentication);
         if (!authorization.isOrganizationAdmin(user)) {
             return ResponseEntity.ok(user.getFarm() == null
                     ? List.of()
-                    : animalService.findByFarmId(user.getFarm().getId()));
+                    : animalService.findByFarmId(user.getFarm().getId(), includePhoto));
         }
-        return ResponseEntity.ok(animalService.findByOrganizationId(organizationId));
+        return ResponseEntity.ok(animalService.findByOrganizationId(organizationId, includePhoto));
     }
 
     @GetMapping("/{id}")

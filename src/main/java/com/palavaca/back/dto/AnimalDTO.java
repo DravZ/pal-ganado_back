@@ -48,6 +48,8 @@ public class AnimalDTO {
         private LocalDate acquisitionDate;
         private BigDecimal acquisitionCost;
         private String notes;
+        @NotBlank(message = "La fotografía del animal es obligatoria")
+        private String photoBase64;
 
         private UUID lotId;
         private UUID sireId;
@@ -72,6 +74,7 @@ public class AnimalDTO {
         private LocalDate acquisitionDate;
         private BigDecimal acquisitionCost;
         private String notes;
+        private String photoBase64;
         private String status;
         private UUID sireId;
         private UUID damId;
@@ -106,6 +109,7 @@ public class AnimalDTO {
         private LocalDate acquisitionDate;
         private BigDecimal acquisitionCost;
         private String notes;
+        private String photoBase64;
         private String status;
         private UUID sireId;
         private String sireTagNumber;

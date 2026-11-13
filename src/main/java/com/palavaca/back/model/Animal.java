@@ -108,6 +108,9 @@ public class Animal {
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
 
+    @Column(name = "photo_base64", columnDefinition = "TEXT")
+    private String photoBase64;
+
     @Builder.Default
     @Column(name = "status", nullable = false, length = 30)
     private String status = "active";

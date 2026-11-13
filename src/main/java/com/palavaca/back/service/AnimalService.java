@@ -36,16 +36,16 @@ public class AnimalService {
     private final AnimalIdentifierRepository identifierRepository;
 
     @Transactional(readOnly = true)
-    public List<AnimalDTO.Response> findByOrganizationId(UUID organizationId) {
+    public List<AnimalDTO.Response> findByOrganizationId(UUID organizationId, boolean includePhoto) {
         return animalRepository.findByOrganizationId(organizationId).stream()
-                .map(this::mapToResponse)
+                .map(animal -> mapToResponse(animal, includePhoto))
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<AnimalDTO.Response> findByFarmId(UUID farmId) {
+    public List<AnimalDTO.Response> findByFarmId(UUID farmId, boolean includePhoto) {
         return animalRepository.findByFarmId(farmId).stream()
-                .map(this::mapToResponse)
+                .map(animal -> mapToResponse(animal, includePhoto))
                 .toList();
     }
 
@@ -53,7 +53,7 @@ public class AnimalService {
     public AnimalDTO.Response findById(UUID id) {
         Animal animal = animalRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Animal no encontrado con ID: " + id));
-        return mapToResponse(animal);
+        return mapToResponse(animal, true);
     }
 
     @Transactional
@@ -121,6 +121,7 @@ public class AnimalService {
                 .acquisitionDate(request.getAcquisitionDate())
                 .acquisitionCost(request.getAcquisitionCost())
                 .notes(request.getNotes())
+                .photoBase64(request.getPhotoBase64())
                 .status("active")
                 .sire(sire)
                 .dam(dam)
@@ -136,7 +137,7 @@ public class AnimalService {
                     .current(request.getIsCurrent() == null || request.getIsCurrent())
                     .build());
         }
-        return mapToResponse(savedAnimal);
+        return mapToResponse(savedAnimal, true);
     }
 
     @Transactional
@@ -182,6 +183,7 @@ public class AnimalService {
         if (request.getAcquisitionDate() != null) animal.setAcquisitionDate(request.getAcquisitionDate());
         if (request.getAcquisitionCost() != null) animal.setAcquisitionCost(request.getAcquisitionCost());
         if (request.getNotes() != null) animal.setNotes(request.getNotes());
+        if (request.getPhotoBase64() != null) animal.setPhotoBase64(request.getPhotoBase64());
         if (request.getStatus() != null) animal.setStatus(request.getStatus());
 
         if (request.getSireId() != null) {
@@ -196,7 +198,7 @@ public class AnimalService {
             animal.setDam(dam);
         }
 
-        return mapToResponse(animalRepository.save(animal));
+        return mapToResponse(animalRepository.save(animal), true);
     }
 
     private void assertIdentifierAvailable(UUID organizationId, String value, UUID excludeAnimalId) {
@@ -222,7 +224,7 @@ public class AnimalService {
         animalRepository.deleteById(id);
     }
 
-    private AnimalDTO.Response mapToResponse(Animal a) {
+    private AnimalDTO.Response mapToResponse(Animal a, boolean includePhoto) {
         return AnimalDTO.Response.builder()
                 .id(a.getId())
                 .organizationId(a.getOrganization().getId())
@@ -249,6 +251,7 @@ public class AnimalService {
                 .acquisitionDate(a.getAcquisitionDate())
                 .acquisitionCost(a.getAcquisitionCost())
                 .notes(a.getNotes())
+                .photoBase64(includePhoto ? a.getPhotoBase64() : null)
                 .status(a.getStatus())
                 .sireId(a.getSire() != null ? a.getSire().getId() : null)
                 .sireTagNumber(a.getSire() != null ? a.getSire().getTagNumber() : null)

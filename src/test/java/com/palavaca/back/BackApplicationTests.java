@@ -2,6 +2,7 @@ package com.palavaca.back;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.palavaca.back.dto.AnimalDTO;
 import com.palavaca.back.dto.AuthDTO;
 import jakarta.servlet.http.Cookie;
 import jakarta.validation.Validator;
@@ -12,6 +13,8 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+
+import java.util.UUID;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -131,5 +134,19 @@ class BackApplicationTests {
 
         assertFalse(validator.validate(request).stream()
                 .anyMatch(violation -> violation.getPropertyPath().toString().equals("userPass")));
+    }
+
+    @Test
+    void animalCreationRequiresPhoto() {
+        AnimalDTO.CreateRequest request = new AnimalDTO.CreateRequest();
+        request.setOrganizationId(UUID.randomUUID());
+        request.setGender("Hembra");
+
+        assertTrue(validator.validate(request).stream()
+                .anyMatch(violation -> violation.getPropertyPath().toString().equals("photoBase64")));
+
+        request.setPhotoBase64("data:image/jpeg;base64,YQ==");
+        assertFalse(validator.validate(request).stream()
+                .anyMatch(violation -> violation.getPropertyPath().toString().equals("photoBase64")));
     }
 }
