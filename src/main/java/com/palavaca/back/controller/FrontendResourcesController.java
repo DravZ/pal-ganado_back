@@ -12,9 +12,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 @RestController
@@ -85,9 +88,17 @@ public class FrontendResourcesController {
     public ResponseEntity<IdentifierResponse> createIdentifier(
             Authentication authentication,
             @Valid @RequestBody IdentifierRequest request) {
-        authorization.requireAnimal(authentication, request.animalId());
+        Animal animal = authorization.requireAnimal(authentication, request.animalId());
+        String normalized = request.identifier().trim().toLowerCase(Locale.ROOT);
+        UUID organizationId = animal.getOrganization().getId();
+        if (animalRepository.existsIdentifier(organizationId, normalized, null)
+                || identifierRepository.existsIdentifier(organizationId, normalized, null)) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "El identificador \"" + request.identifier() + "\" ya está registrado en esta organización.");
+        }
         AnimalIdentifier identifier = AnimalIdentifier.builder()
-                .animal(requireAnimal(request.animalId()))
+                .animal(animal)
                 .identifierType(request.identifierType())
                 .identifier(request.identifier())
                 .current(request.isCurrent() == null || request.isCurrent())
