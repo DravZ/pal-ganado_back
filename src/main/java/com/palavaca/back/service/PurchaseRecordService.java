@@ -118,9 +118,21 @@ public class PurchaseRecordService {
                         .unitPrice(line.getUnitPrice())
                         .subtotal(line.getSubtotal())
                         .build());
+                if (line.getQuantity() != null) {
+                    increaseProductStock(lineProduct, line.getQuantity());
+                }
             }
         }
+        if (product != null && request.getQuantity() != null) {
+            increaseProductStock(product, request.getQuantity());
+        }
         return mapToResponse(saved);
+    }
+
+    private void increaseProductStock(Product product, BigDecimal quantity) {
+        BigDecimal current = product.getCurrentStock() == null ? BigDecimal.ZERO : product.getCurrentStock();
+        product.setCurrentStock(current.add(quantity));
+        productRepository.save(product);
     }
 
     @Transactional
