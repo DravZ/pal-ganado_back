@@ -67,6 +67,10 @@ public class SalesRecordService {
         if (request.getAnimalId() != null) {
             animal = animalRepository.findById(request.getAnimalId())
                     .orElseThrow(() -> new EntityNotFoundException("Animal no encontrado con ID: " + request.getAnimalId()));
+            if (!isAvailableForSale(animal.getStatus())) {
+                throw new IllegalArgumentException(
+                        "El animal " + animal.getTagNumber() + " ya fue vendido y no puede venderse de nuevo.");
+            }
             // Si el animal es vendido, actualizamos su estado
             animal.setStatus("sold");
             animalRepository.save(animal);
@@ -123,8 +127,24 @@ public class SalesRecordService {
                 Product lineProduct = line.getProductId() == null ? null : productRepository.findById(line.getProductId())
                         .orElseThrow(() -> new EntityNotFoundException("Producto no encontrado"));
                 if (lineAnimal != null) {
+                    if (!isAvailableForSale(lineAnimal.getStatus())) {
+                        throw new IllegalArgumentException(
+                                "El animal " + lineAnimal.getTagNumber() + " ya fue vendido y no puede venderse de nuevo.");
+                    }
                     lineAnimal.setStatus("sold");
                     animalRepository.save(lineAnimal);
+                }
+                if (lineLot != null) {
+                    // La venta de un lote marca como vendidos a todos sus animales activos.
+                    List<Animal> activeAnimals = animalRepository.findByLotIdAndStatus(lineLot.getId(), "active");
+                    if (activeAnimals.isEmpty()) {
+                        throw new IllegalArgumentException(
+                                "El lote " + lineLot.getName() + " no tiene animales activos para vender.");
+                    }
+                    for (Animal lotAnimal : activeAnimals) {
+                        lotAnimal.setStatus("sold");
+                    }
+                    animalRepository.saveAll(activeAnimals);
                 }
                 salesLineRepository.save(SalesLine.builder()
                         .sale(saved)
@@ -172,6 +192,10 @@ public class SalesRecordService {
             throw new EntityNotFoundException("Venta no encontrada con ID: " + id);
         }
         salesRecordRepository.deleteById(id);
+    }
+
+    private boolean isAvailableForSale(String status) {
+        return status == null || status.isBlank() || "active".equalsIgnoreCase(status);
     }
 
     private SalesRecordDTO.Response mapToResponse(SalesRecord s) {

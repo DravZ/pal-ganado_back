@@ -15,6 +15,7 @@ public interface AnimalRepository extends JpaRepository<Animal, UUID> {
     List<Animal> findByOrganizationId(UUID organizationId);
     List<Animal> findByFarmId(UUID farmId);
     List<Animal> findByPaddockId(UUID paddockId);
+    List<Animal> findByLotIdAndStatus(UUID lotId, String status);
     Optional<Animal> findByOrganizationIdAndTagNumber(UUID organizationId, String tagNumber);
 
     @Query("""
