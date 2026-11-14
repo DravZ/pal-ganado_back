@@ -183,12 +183,24 @@ public class FrontendResourcesController {
     }
 
     @PostMapping("/feeding-records")
+    @Transactional
     public ResponseEntity<FeedingResponse> createFeedingRecord(@Valid @RequestBody FeedingRequest request) {
+        Product product = request.productId() == null ? null : requireProduct(request.productId());
+        if (product != null && request.quantity() != null) {
+            BigDecimal available = product.getCurrentStock() == null ? BigDecimal.ZERO : product.getCurrentStock();
+            if (available.compareTo(request.quantity()) < 0) {
+                throw new ResponseStatusException(
+                        HttpStatus.UNPROCESSABLE_ENTITY,
+                        "Stock insuficiente de " + product.getName() + ". Disponible: " + available + ".");
+            }
+            product.setCurrentStock(available.subtract(request.quantity()));
+            productRepository.save(product);
+        }
         FeedingRecord feeding = FeedingRecord.builder()
                 .farm(requireFarm(request.farmId()))
                 .lot(request.lotId() == null ? null : requireLot(request.lotId()))
                 .animal(request.animalId() == null ? null : requireAnimal(request.animalId()))
-                .product(request.productId() == null ? null : requireProduct(request.productId()))
+                .product(product)
                 .feedingDate(request.feedingDate())
                 .quantity(request.quantity())
                 .unit(request.unit())
