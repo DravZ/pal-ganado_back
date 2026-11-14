@@ -55,7 +55,7 @@ public class User {
     @Size(max = 50)
     @Builder.Default
     @Column(name = "role", nullable = false, length = 50)
-    private String role = "Perfil por confirmar";
+    private String role = "Trabajador";
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "farm_id")
