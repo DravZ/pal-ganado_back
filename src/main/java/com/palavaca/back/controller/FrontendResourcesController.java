@@ -1,10 +1,12 @@
 package com.palavaca.back.controller;
 
 import com.palavaca.back.dto.FrontendResourceDTO.*;
+import com.palavaca.back.dto.InvestmentDTO;
 import com.palavaca.back.model.*;
 import com.palavaca.back.repository.*;
 import com.palavaca.back.service.HatoAuthorizationService;
 import com.palavaca.back.service.FinanceIntegrationService;
+import com.palavaca.back.service.InvestmentService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -46,6 +48,7 @@ public class FrontendResourcesController {
     private final AlertRepository alertRepository;
     private final HatoAuthorizationService authorization;
     private final FinanceIntegrationService financeIntegrationService;
+    private final InvestmentService investmentService;
 
     @GetMapping("/lots")
     public List<LotResponse> getLots(Authentication authentication, @RequestParam("farm_id") UUID farmId) {
@@ -363,6 +366,14 @@ public class FrontendResourcesController {
             }
         }
         return ResponseEntity.status(HttpStatus.CREATED).body(movementResponse(movement));
+    }
+
+    @GetMapping("/investment-summary")
+    public InvestmentDTO.FarmInvestment getInvestmentSummary(
+            Authentication authentication,
+            @RequestParam("farm_id") UUID farmId) {
+        authorization.requireFarm(authentication, farmId);
+        return investmentService.summarizeFarm(farmId);
     }
 
     @GetMapping("/alerts")
