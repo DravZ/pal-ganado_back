@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.UUID;
@@ -22,9 +23,17 @@ public class FinancialRecordController {
     private final FinancialRecordService financialRecordService;
 
     @GetMapping
-    @Operation(summary = "Obtener historial financiero de una organización")
-    public ResponseEntity<List<FinancialRecordDTO.Response>> getByOrganization(@RequestParam("organization_id") UUID organizationId) {
-        return ResponseEntity.ok(financialRecordService.findByOrganizationId(organizationId));
+    @Operation(summary = "Obtener historial financiero de una organización o finca")
+    public ResponseEntity<List<FinancialRecordDTO.Response>> getByOrganization(
+            @RequestParam(value = "organization_id", required = false) UUID organizationId,
+            @RequestParam(value = "farm_id", required = false) UUID farmId) {
+        if (farmId != null) {
+            return ResponseEntity.ok(financialRecordService.findByFarmId(farmId));
+        }
+        if (organizationId != null) {
+            return ResponseEntity.ok(financialRecordService.findByOrganizationId(organizationId));
+        }
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Se requiere organization_id o farm_id");
     }
 
     @GetMapping("/{id}")

@@ -46,11 +46,14 @@ public class FinancialRecordDTO {
     public static class Response {
         private UUID id;
         private UUID organizationId;
+        private UUID farmId;
         private LocalDate recordDate;
         private String transactionType;
         private String category;
         private BigDecimal amount;
         private String description;
+        private String referenceType;
+        private UUID referenceId;
         private LocalDateTime createdAt;
     }
 }

@@ -25,6 +25,7 @@ public class PurchaseRecordService {
     private final MedicationRepository medicationRepository;
     private final FarmRepository farmRepository;
     private final PurchaseLineRepository purchaseLineRepository;
+    private final FinanceIntegrationService financeIntegrationService;
 
     @Transactional(readOnly = true)
     public List<PurchaseRecordDTO.Response> findByOrganizationId(UUID organizationId) {
@@ -127,6 +128,7 @@ public class PurchaseRecordService {
         if (product != null && request.getQuantity() != null) {
             increaseProductStock(product, request.getQuantity());
         }
+        financeIntegrationService.recordExpenseForPurchase(saved);
         return mapToResponse(saved);
     }
 
@@ -167,6 +169,7 @@ public class PurchaseRecordService {
                 .orElseThrow(() -> new EntityNotFoundException("Compra no encontrada con ID: " + id));
         record.setDeletedAt(LocalDateTime.now());
         purchaseRecordRepository.save(record);
+        financeIntegrationService.removeMovementsFor(FinanceIntegrationService.REFERENCE_PURCHASE, id);
     }
 
     private PurchaseRecordDTO.Response mapToResponse(PurchaseRecord p) {

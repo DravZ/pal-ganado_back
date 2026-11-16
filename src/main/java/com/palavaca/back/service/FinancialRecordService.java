@@ -29,6 +29,13 @@ public class FinancialRecordService {
     }
 
     @Transactional(readOnly = true)
+    public List<FinancialRecordDTO.Response> findByFarmId(UUID farmId) {
+        return financialRecordRepository.findByFarmIdOrderByRecordDateDesc(farmId).stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public FinancialRecordDTO.Response findById(UUID id) {
         FinancialRecord record = financialRecordRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Movimiento financiero no encontrado con ID: " + id));
@@ -78,11 +85,14 @@ public class FinancialRecordService {
         return FinancialRecordDTO.Response.builder()
                 .id(f.getId())
                 .organizationId(f.getOrganization().getId())
+                .farmId(f.getFarm() == null ? null : f.getFarm().getId())
                 .recordDate(f.getRecordDate())
                 .transactionType(f.getTransactionType())
                 .category(f.getCategory())
                 .amount(f.getAmount())
                 .description(f.getDescription())
+                .referenceType(f.getReferenceType())
+                .referenceId(f.getReferenceId())
                 .createdAt(f.getCreatedAt())
                 .build();
     }

@@ -18,4 +18,9 @@ public interface FinancialRecordRepository extends JpaRepository<FinancialRecord
 
     @Query("select f from FinancialRecord f where f.organization.id = :organizationId and f.recordDate between :startDate and :endDate and f.deletedAt is null")
     List<FinancialRecord> findByOrganizationIdAndRecordDateBetween(@Param("organizationId") UUID organizationId, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+
+    List<FinancialRecord> findByReferenceTypeAndReferenceIdAndDeletedAtIsNull(String referenceType, UUID referenceId);
+
+    @Query("select f from FinancialRecord f where f.farm.id = :farmId and f.deletedAt is null order by f.recordDate desc")
+    List<FinancialRecord> findByFarmIdOrderByRecordDateDesc(@Param("farmId") UUID farmId);
 }

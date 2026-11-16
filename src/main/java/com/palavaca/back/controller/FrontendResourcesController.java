@@ -4,6 +4,7 @@ import com.palavaca.back.dto.FrontendResourceDTO.*;
 import com.palavaca.back.model.*;
 import com.palavaca.back.repository.*;
 import com.palavaca.back.service.HatoAuthorizationService;
+import com.palavaca.back.service.FinanceIntegrationService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -44,6 +45,7 @@ public class FrontendResourcesController {
     private final MovementAnimalRepository movementAnimalRepository;
     private final AlertRepository alertRepository;
     private final HatoAuthorizationService authorization;
+    private final FinanceIntegrationService financeIntegrationService;
 
     @GetMapping("/lots")
     public List<LotResponse> getLots(Authentication authentication, @RequestParam("farm_id") UUID farmId) {
@@ -207,8 +209,10 @@ public class FrontendResourcesController {
                 .cost(request.cost())
                 .notes(request.notes())
                 .build();
+        FeedingRecord savedFeeding = feedingRepository.save(feeding);
+        financeIntegrationService.recordExpenseForFeeding(savedFeeding);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(feedingResponse(feedingRepository.save(feeding)));
+                .body(feedingResponse(savedFeeding));
     }
 
     @GetMapping("/production-records")
@@ -218,6 +222,7 @@ public class FrontendResourcesController {
     }
 
     @PostMapping("/production-records")
+    @Transactional
     public ResponseEntity<ProductionResponse> createProductionRecord(@Valid @RequestBody ProductionRequest request) {
         ProductionRecord production = ProductionRecord.builder()
                 .farm(requireFarm(request.farmId()))
@@ -231,8 +236,10 @@ public class FrontendResourcesController {
                 .revenue(request.revenue())
                 .notes(request.notes())
                 .build();
+        ProductionRecord savedProduction = productionRepository.save(production);
+        financeIntegrationService.recordIncomeForProduction(savedProduction);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(productionResponse(productionRepository.save(production)));
+                .body(productionResponse(savedProduction));
     }
 
     @GetMapping("/expenses")

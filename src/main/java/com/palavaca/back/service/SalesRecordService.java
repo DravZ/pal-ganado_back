@@ -26,6 +26,7 @@ public class SalesRecordService {
     private final FarmRepository farmRepository;
     private final SalesLineRepository salesLineRepository;
     private final LotRepository lotRepository;
+    private final FinanceIntegrationService financeIntegrationService;
 
     @Transactional(readOnly = true)
     public List<SalesRecordDTO.Response> findByOrganizationId(UUID organizationId) {
@@ -159,6 +160,7 @@ public class SalesRecordService {
                         .build());
             }
         }
+        financeIntegrationService.recordIncomeForSale(saved);
         return mapToResponse(saved);
     }
 
@@ -193,6 +195,7 @@ public class SalesRecordService {
                 .orElseThrow(() -> new EntityNotFoundException("Venta no encontrada con ID: " + id));
         record.setDeletedAt(LocalDateTime.now());
         salesRecordRepository.save(record);
+        financeIntegrationService.removeMovementsFor(FinanceIntegrationService.REFERENCE_SALE, id);
     }
 
     private boolean isAvailableForSale(String status) {

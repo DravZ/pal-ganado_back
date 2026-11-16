@@ -34,6 +34,7 @@ public class AnimalService {
     private final PaddockRepository paddockRepository;
     private final LotRepository lotRepository;
     private final AnimalIdentifierRepository identifierRepository;
+    private final FinanceIntegrationService financeIntegrationService;
 
     @Transactional(readOnly = true)
     public List<AnimalDTO.Response> findByOrganizationId(UUID organizationId, boolean includePhoto) {
@@ -137,6 +138,7 @@ public class AnimalService {
                     .current(request.getIsCurrent() == null || request.getIsCurrent())
                     .build());
         }
+        financeIntegrationService.recordExpenseForAnimal(savedAnimal);
         return mapToResponse(savedAnimal, true);
     }
 
