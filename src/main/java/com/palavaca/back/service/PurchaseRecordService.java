@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.ArrayList;
@@ -162,10 +163,10 @@ public class PurchaseRecordService {
 
     @Transactional
     public void delete(UUID id) {
-        if (!purchaseRecordRepository.existsById(id)) {
-            throw new EntityNotFoundException("Compra no encontrada con ID: " + id);
-        }
-        purchaseRecordRepository.deleteById(id);
+        PurchaseRecord record = purchaseRecordRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Compra no encontrada con ID: " + id));
+        record.setDeletedAt(LocalDateTime.now());
+        purchaseRecordRepository.save(record);
     }
 
     private PurchaseRecordDTO.Response mapToResponse(PurchaseRecord p) {

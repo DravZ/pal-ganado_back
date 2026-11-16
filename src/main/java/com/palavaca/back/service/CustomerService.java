@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -67,10 +68,10 @@ public class CustomerService {
 
     @Transactional
     public void delete(UUID id) {
-        if (!customerRepository.existsById(id)) {
-            throw new EntityNotFoundException("Cliente no encontrado con ID: " + id);
-        }
-        customerRepository.deleteById(id);
+        Customer customer = customerRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Cliente no encontrado con ID: " + id));
+        customer.setDeletedAt(LocalDateTime.now());
+        customerRepository.save(customer);
     }
 
     private CustomerDTO.Response mapToResponse(Customer c) {

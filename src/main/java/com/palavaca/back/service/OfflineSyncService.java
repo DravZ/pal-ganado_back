@@ -131,6 +131,10 @@ public class OfflineSyncService {
             predicates.add(path(root, resource.farmPath()).in(scope.farmIds()));
         }
 
+        if (resourceCatalog.softDeletable(entityType)) {
+            predicates.add(criteriaBuilder.isNull(root.get("deletedAt")));
+        }
+
         if (resource.entityType().equals(com.palavaca.back.model.Organization.class)) {
             predicates.add(criteriaBuilder.equal(root.get("id"), scope.organizationId()));
         }

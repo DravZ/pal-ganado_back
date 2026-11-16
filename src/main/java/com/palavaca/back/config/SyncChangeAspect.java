@@ -13,6 +13,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -41,6 +42,8 @@ public class SyncChangeAspect {
             Object entity = savedEntities.get(index);
             if (resourceCatalog.forEntity(entity.getClass()) == null) continue;
             boolean previouslyExisted = index < existed.size() && existed.get(index);
+            // Baja lógica: la fila sigue existiendo; el aspecto de borrado registra el DELETE de sincronización.
+            if (previouslyExisted && isSoftDeleted(entity)) continue;
             changeRecorder.record(entity, previouslyExisted ? "UPDATE" : "CREATE");
         }
         return result;
@@ -61,6 +64,15 @@ public class SyncChangeAspect {
         SyncResourceCatalog.Resource resource = resourceCatalog.forEntity(entity.getClass());
         UUID id = resourceCatalog.idOf(entity);
         return resource != null && id != null && entityManager.find(resource.entityType(), id) != null;
+    }
+
+    private boolean isSoftDeleted(Object entity) {
+        try {
+            Method method = entity.getClass().getMethod("getDeletedAt");
+            return method.invoke(entity) != null;
+        } catch (ReflectiveOperationException exception) {
+            return false;
+        }
     }
 
     private List<Object> entityArguments(Object[] values) {

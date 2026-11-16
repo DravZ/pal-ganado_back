@@ -68,6 +68,9 @@ public class Expense {
     @Column(name = "status", nullable = false, length = 30)
     private String status = "PENDING";
 
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

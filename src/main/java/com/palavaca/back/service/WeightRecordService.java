@@ -86,10 +86,10 @@ public class WeightRecordService {
 
     @Transactional
     public void delete(UUID id) {
-        if (!weightRecordRepository.existsById(id)) {
-            throw new EntityNotFoundException("Registro de peso no encontrado con ID: " + id);
-        }
-        weightRecordRepository.deleteById(id);
+        WeightRecord record = weightRecordRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Registro de peso no encontrado con ID: " + id));
+        record.setDeletedAt(LocalDateTime.now());
+        weightRecordRepository.save(record);
     }
 
     private WeightRecordDTO.Response mapToResponse(WeightRecord w) {

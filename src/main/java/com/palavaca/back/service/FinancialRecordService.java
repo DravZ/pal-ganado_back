@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -67,10 +68,10 @@ public class FinancialRecordService {
 
     @Transactional
     public void delete(UUID id) {
-        if (!financialRecordRepository.existsById(id)) {
-            throw new EntityNotFoundException("Movimiento financiero no encontrado con ID: " + id);
-        }
-        financialRecordRepository.deleteById(id);
+        FinancialRecord record = financialRecordRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Movimiento financiero no encontrado con ID: " + id));
+        record.setDeletedAt(LocalDateTime.now());
+        financialRecordRepository.save(record);
     }
 
     private FinancialRecordDTO.Response mapToResponse(FinancialRecord f) {

@@ -68,6 +68,13 @@ public class SyncResourceCatalog {
                 .orElse(null);
     }
 
+    public boolean softDeletable(Class<?> entityType) {
+        for (Field field : fields(entityType)) {
+            if (field.getName().equals("deletedAt")) return true;
+        }
+        return false;
+    }
+
     public UUID idOf(Object entity) {
         if (entity == null) return null;
         Object id = property(entity, "id");
@@ -96,7 +103,8 @@ public class SyncResourceCatalog {
         for (Field field : fields(entity.getClass())) {
             if (Modifier.isStatic(field.getModifiers()) || field.isSynthetic()
                     || field.isAnnotationPresent(Transient.class)
-                    || field.getName().equalsIgnoreCase("passwordHash")) {
+                    || field.getName().equalsIgnoreCase("passwordHash")
+                    || field.getName().equalsIgnoreCase("deletedAt")) {
                 continue;
             }
 

@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -76,10 +77,10 @@ public class FarmService {
 
     @Transactional
     public void delete(UUID id) {
-        if (!farmRepository.existsById(id)) {
-            throw new EntityNotFoundException("Finca no encontrada con ID: " + id);
-        }
-        farmRepository.deleteById(id);
+        Farm farm = farmRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Finca no encontrada con ID: " + id));
+        farm.setDeletedAt(LocalDateTime.now());
+        farmRepository.save(farm);
     }
 
     private FarmDTO.Response mapToResponse(Farm f) {

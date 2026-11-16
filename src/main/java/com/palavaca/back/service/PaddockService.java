@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -76,10 +77,10 @@ public class PaddockService {
 
     @Transactional
     public void delete(UUID id) {
-        if (!paddockRepository.existsById(id)) {
-            throw new EntityNotFoundException("Potrero no encontrado con ID: " + id);
-        }
-        paddockRepository.deleteById(id);
+        Paddock paddock = paddockRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Potrero no encontrado con ID: " + id));
+        paddock.setDeletedAt(LocalDateTime.now());
+        paddockRepository.save(paddock);
     }
 
     private PaddockDTO.Response mapToResponse(Paddock p) {

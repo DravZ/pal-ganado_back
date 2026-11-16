@@ -73,6 +73,9 @@ public class Farm {
     @Column(name = "status", nullable = false, length = 30)
     private String status = "active";
 
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

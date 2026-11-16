@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -85,10 +86,10 @@ public class InventoryService {
 
     @Transactional
     public void delete(UUID id) {
-        if (!inventoryRepository.existsById(id)) {
-            throw new EntityNotFoundException("Inventario no encontrado con ID: " + id);
-        }
-        inventoryRepository.deleteById(id);
+        Inventory inventory = inventoryRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Inventario no encontrado con ID: " + id));
+        inventory.setDeletedAt(LocalDateTime.now());
+        inventoryRepository.save(inventory);
     }
 
     private InventoryDTO.Response mapToResponse(Inventory i) {

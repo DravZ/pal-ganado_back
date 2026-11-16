@@ -60,6 +60,9 @@ public class Inventory {
     @Column(name = "average_cost", precision = 14, scale = 4)
     private BigDecimal averageCost;
 
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -81,10 +82,10 @@ public class MilkProductionService {
 
     @Transactional
     public void delete(UUID id) {
-        if (!milkProductionRepository.existsById(id)) {
-            throw new EntityNotFoundException("Registro de leche no encontrado con ID: " + id);
-        }
-        milkProductionRepository.deleteById(id);
+        MilkProduction milk = milkProductionRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Registro de leche no encontrado con ID: " + id));
+        milk.setDeletedAt(LocalDateTime.now());
+        milkProductionRepository.save(milk);
     }
 
     private MilkProductionDTO.Response mapToResponse(MilkProduction m) {
