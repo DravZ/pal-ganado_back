@@ -10,6 +10,8 @@ import java.util.UUID;
 
 public interface SyncChangeRepository extends JpaRepository<SyncChange, Long> {
 
+    List<SyncChange> findByResourceTypeAndOrganizationIdIsNull(String resourceType);
+
     @Query("""
             select change from SyncChange change
             where change.id > :cursor
