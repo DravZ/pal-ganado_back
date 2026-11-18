@@ -9,6 +9,7 @@ import jakarta.persistence.Version;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -144,6 +145,40 @@ public class SyncResourceCatalog {
 
     private Object property(Object value, String name) {
         if (value == null) return null;
+        Method getter = getter(value.getClass(), name);
+        if (getter != null) {
+            try {
+                return getter.invoke(value);
+            } catch (ReflectiveOperationException exception) {
+                throw new IllegalStateException("No se pudo inspeccionar un recurso de sincronización", exception);
+            }
+        }
+        return fieldValue(value, name);
+    }
+
+    /**
+     * Busca el getter público de una propiedad. Se prefieren los getters sobre la lectura directa del
+     * campo porque Hibernate intercepta las llamadas a métodos de los proxies perezosos y los
+     * inicializa, mientras que leer el campo por reflexión devuelve {@code null} en las asociaciones
+     * que todavía no se han cargado. Sin esto, la organización de los recursos con alcance de finca
+     * (p. ej. {@code farm.organization.id}) se registraba como nula y la sincronización incremental
+     * los omitía.
+     */
+    private Method getter(Class<?> type, String name) {
+        if (name == null || name.isEmpty()) return null;
+        String capitalized = Character.toUpperCase(name.charAt(0)) + name.substring(1);
+        for (String prefix : List.of("get", "is")) {
+            try {
+                Method method = type.getMethod(prefix + capitalized);
+                if (method.getParameterCount() == 0) return method;
+            } catch (NoSuchMethodException ignored) {
+                // Se prueba con el siguiente prefijo.
+            }
+        }
+        return null;
+    }
+
+    private Object fieldValue(Object value, String name) {
         Class<?> type = value.getClass();
         while (type != null) {
             try {
