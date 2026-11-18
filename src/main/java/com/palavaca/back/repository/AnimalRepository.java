@@ -35,4 +35,17 @@ public interface AnimalRepository extends JpaRepository<Animal, UUID> {
 
     @Query("SELECT a FROM Animal a WHERE a.organization.id = :orgId AND a.gender = 'F'")
     List<Animal> findDamsByOrganization(@Param("orgId") UUID orgId);
+
+    @Query("""
+            select a from Animal a
+            where a.acquisitionCost is not null
+              and a.acquisitionCost > 0
+              and not exists (
+                  select 1 from Expense e
+                  where e.referenceType = :referenceType
+                    and e.referenceId = a.id
+                    and e.deletedAt is null
+              )
+            """)
+    List<Animal> findWithoutAcquisitionExpense(@Param("referenceType") String referenceType);
 }

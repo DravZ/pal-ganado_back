@@ -21,4 +21,18 @@ public interface PurchaseRecordRepository extends JpaRepository<PurchaseRecord, 
 
     @Query("select p from PurchaseRecord p where p.organization.id = :organizationId and p.purchaseDate between :startDate and :endDate and p.deletedAt is null")
     List<PurchaseRecord> findByOrganizationIdAndPurchaseDateBetween(@Param("organizationId") UUID organizationId, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+
+    @Query("""
+            select p from PurchaseRecord p
+            where p.totalAmount is not null
+              and p.totalAmount > 0
+              and p.deletedAt is null
+              and not exists (
+                  select 1 from Expense e
+                  where e.referenceType = :referenceType
+                    and e.referenceId = p.id
+                    and e.deletedAt is null
+              )
+            """)
+    List<PurchaseRecord> findWithoutPurchaseExpense(@Param("referenceType") String referenceType);
 }

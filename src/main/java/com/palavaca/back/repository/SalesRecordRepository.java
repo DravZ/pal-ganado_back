@@ -21,4 +21,18 @@ public interface SalesRecordRepository extends JpaRepository<SalesRecord, UUID> 
 
     @Query("select s from SalesRecord s where s.organization.id = :organizationId and s.saleDate between :startDate and :endDate and s.deletedAt is null")
     List<SalesRecord> findByOrganizationIdAndSaleDateBetween(@Param("organizationId") UUID organizationId, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+
+    @Query("""
+            select s from SalesRecord s
+            where s.totalAmount is not null
+              and s.totalAmount > 0
+              and s.deletedAt is null
+              and not exists (
+                  select 1 from FinancialRecord fr
+                  where fr.referenceType = :referenceType
+                    and fr.referenceId = s.id
+                    and fr.deletedAt is null
+              )
+            """)
+    List<SalesRecord> findWithoutSaleIncome(@Param("referenceType") String referenceType);
 }
