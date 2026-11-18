@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -93,10 +94,10 @@ public class HealthRecordService {
 
     @Transactional
     public void delete(UUID id) {
-        if (!healthRecordRepository.existsById(id)) {
-            throw new EntityNotFoundException("Registro de salud no encontrado con ID: " + id);
-        }
-        healthRecordRepository.deleteById(id);
+        HealthRecord record = healthRecordRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Registro de salud no encontrado con ID: " + id));
+        record.setDeletedAt(LocalDateTime.now());
+        healthRecordRepository.save(record);
     }
 
     private HealthRecordDTO.Response mapToResponse(HealthRecord h) {

@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -69,10 +70,10 @@ public class SupplierService {
 
     @Transactional
     public void delete(UUID id) {
-        if (!supplierRepository.existsById(id)) {
-            throw new EntityNotFoundException("Proveedor no encontrado con ID: " + id);
-        }
-        supplierRepository.deleteById(id);
+        Supplier supplier = supplierRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Proveedor no encontrado con ID: " + id));
+        supplier.setDeletedAt(LocalDateTime.now());
+        supplierRepository.save(supplier);
     }
 
     private SupplierDTO.Response mapToResponse(Supplier s) {

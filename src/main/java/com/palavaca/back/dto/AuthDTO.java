@@ -51,5 +51,14 @@ public final class AuthDTO {
 
     public record PasswordResetRequest(@NotBlank @Email String email) {}
 
+    public record PasswordResetConfirmRequest(
+            @NotBlank String token,
+            @NotBlank
+            @Size(min = 9, max = 72, message = "La contraseña debe tener entre 9 y 72 caracteres")
+            @Pattern(
+                    regexp = "^(?=\\S+$)(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9\\s]).+$",
+                    message = "La contraseña debe incluir mayúscula, minúscula, número y carácter especial, sin espacios")
+            String password) {}
+
     public record PasswordResetResponse(String message) {}
 }

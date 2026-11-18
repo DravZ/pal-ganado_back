@@ -1,9 +1,12 @@
 package com.palavaca.back.controller;
 
 import com.palavaca.back.dto.FrontendResourceDTO.*;
+import com.palavaca.back.dto.InvestmentDTO;
 import com.palavaca.back.model.*;
 import com.palavaca.back.repository.*;
 import com.palavaca.back.service.HatoAuthorizationService;
+import com.palavaca.back.service.FinanceIntegrationService;
+import com.palavaca.back.service.InvestmentService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -12,9 +15,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 @RestController
@@ -41,6 +47,8 @@ public class FrontendResourcesController {
     private final MovementAnimalRepository movementAnimalRepository;
     private final AlertRepository alertRepository;
     private final HatoAuthorizationService authorization;
+    private final FinanceIntegrationService financeIntegrationService;
+    private final InvestmentService investmentService;
 
     @GetMapping("/lots")
     public List<LotResponse> getLots(Authentication authentication, @RequestParam("farm_id") UUID farmId) {
@@ -85,9 +93,17 @@ public class FrontendResourcesController {
     public ResponseEntity<IdentifierResponse> createIdentifier(
             Authentication authentication,
             @Valid @RequestBody IdentifierRequest request) {
-        authorization.requireAnimal(authentication, request.animalId());
+        Animal animal = authorization.requireAnimal(authentication, request.animalId());
+        String normalized = request.identifier().trim().toLowerCase(Locale.ROOT);
+        UUID organizationId = animal.getOrganization().getId();
+        if (animalRepository.existsIdentifier(organizationId, normalized, null)
+                || identifierRepository.existsIdentifier(organizationId, normalized, null)) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "El identificador \"" + request.identifier() + "\" ya está registrado en esta organización.");
+        }
         AnimalIdentifier identifier = AnimalIdentifier.builder()
-                .animal(requireAnimal(request.animalId()))
+                .animal(animal)
                 .identifierType(request.identifierType())
                 .identifier(request.identifier())
                 .current(request.isCurrent() == null || request.isCurrent())
@@ -166,40 +182,83 @@ public class FrontendResourcesController {
     }
 
     @GetMapping("/feeding-records")
-    public List<FeedingResponse> getFeedingRecords(@RequestParam("farm_id") UUID farmId) {
+    public List<FeedingResponse> getFeedingRecords(
+            Authentication authentication,
+            @RequestParam("farm_id") UUID farmId) {
+        authorization.requireFarm(authentication, farmId);
         return feedingRepository.findByFarmIdOrderByFeedingDateDesc(farmId).stream()
                 .map(this::feedingResponse).toList();
     }
 
     @PostMapping("/feeding-records")
-    public ResponseEntity<FeedingResponse> createFeedingRecord(@Valid @RequestBody FeedingRequest request) {
+    @Transactional
+    public ResponseEntity<FeedingResponse> createFeedingRecord(
+            Authentication authentication,
+            @Valid @RequestBody FeedingRequest request) {
+        Farm farm = authorization.requireFarm(authentication, request.farmId());
+        Lot lot = request.lotId() == null ? null : authorization.requireLot(authentication, request.lotId());
+        if (lot != null && !farm.getId().equals(lot.getFarm().getId())) {
+            throw new org.springframework.web.server.ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        Animal animal = request.animalId() == null ? null : authorization.requireAnimal(authentication, request.animalId());
+        if (animal != null && (animal.getFarm() == null || !farm.getId().equals(animal.getFarm().getId()))) {
+            throw new org.springframework.web.server.ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        Product product = request.productId() == null ? null : requireProduct(request.productId());
+        if (product != null && request.quantity() != null) {
+            BigDecimal available = product.getCurrentStock() == null ? BigDecimal.ZERO : product.getCurrentStock();
+            if (available.compareTo(request.quantity()) < 0) {
+                throw new ResponseStatusException(
+                        HttpStatus.UNPROCESSABLE_ENTITY,
+                        "Stock insuficiente de " + product.getName() + ". Disponible: " + available + ".");
+            }
+            product.setCurrentStock(available.subtract(request.quantity()));
+            productRepository.save(product);
+        }
         FeedingRecord feeding = FeedingRecord.builder()
-                .farm(requireFarm(request.farmId()))
-                .lot(request.lotId() == null ? null : requireLot(request.lotId()))
-                .animal(request.animalId() == null ? null : requireAnimal(request.animalId()))
-                .product(request.productId() == null ? null : requireProduct(request.productId()))
+                .farm(farm)
+                .lot(lot)
+                .animal(animal)
+                .product(product)
                 .feedingDate(request.feedingDate())
                 .quantity(request.quantity())
                 .unit(request.unit())
                 .cost(request.cost())
                 .notes(request.notes())
                 .build();
+        FeedingRecord savedFeeding = feedingRepository.save(feeding);
+        financeIntegrationService.recordExpenseForFeeding(savedFeeding);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(feedingResponse(feedingRepository.save(feeding)));
+                .body(feedingResponse(savedFeeding));
     }
 
     @GetMapping("/production-records")
-    public List<ProductionResponse> getProductionRecords(@RequestParam("farm_id") UUID farmId) {
+    public List<ProductionResponse> getProductionRecords(
+            Authentication authentication,
+            @RequestParam("farm_id") UUID farmId) {
+        authorization.requireFarm(authentication, farmId);
         return productionRepository.findByFarmIdOrderByProductionDateDesc(farmId).stream()
                 .map(this::productionResponse).toList();
     }
 
     @PostMapping("/production-records")
-    public ResponseEntity<ProductionResponse> createProductionRecord(@Valid @RequestBody ProductionRequest request) {
+    @Transactional
+    public ResponseEntity<ProductionResponse> createProductionRecord(
+            Authentication authentication,
+            @Valid @RequestBody ProductionRequest request) {
+        Farm farm = authorization.requireFarm(authentication, request.farmId());
+        Animal animal = request.animalId() == null ? null : authorization.requireAnimal(authentication, request.animalId());
+        if (animal != null && (animal.getFarm() == null || !farm.getId().equals(animal.getFarm().getId()))) {
+            throw new org.springframework.web.server.ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        Lot lot = request.lotId() == null ? null : authorization.requireLot(authentication, request.lotId());
+        if (lot != null && !farm.getId().equals(lot.getFarm().getId())) {
+            throw new org.springframework.web.server.ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
         ProductionRecord production = ProductionRecord.builder()
-                .farm(requireFarm(request.farmId()))
-                .animal(request.animalId() == null ? null : requireAnimal(request.animalId()))
-                .lot(request.lotId() == null ? null : requireLot(request.lotId()))
+                .farm(farm)
+                .animal(animal)
+                .lot(lot)
                 .productionDate(request.productionDate())
                 .productionType(request.productionType())
                 .quantity(request.quantity())
@@ -208,8 +267,10 @@ public class FrontendResourcesController {
                 .revenue(request.revenue())
                 .notes(request.notes())
                 .build();
+        ProductionRecord savedProduction = productionRepository.save(production);
+        financeIntegrationService.recordIncomeForProduction(savedProduction);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(productionResponse(productionRepository.save(production)));
+                .body(productionResponse(savedProduction));
     }
 
     @GetMapping("/expenses")
@@ -335,18 +396,38 @@ public class FrontendResourcesController {
         return ResponseEntity.status(HttpStatus.CREATED).body(movementResponse(movement));
     }
 
+    @GetMapping("/investment-summary")
+    public InvestmentDTO.FarmInvestment getInvestmentSummary(
+            Authentication authentication,
+            @RequestParam("farm_id") UUID farmId) {
+        authorization.requireFarm(authentication, farmId);
+        return investmentService.summarizeFarm(farmId);
+    }
+
     @GetMapping("/alerts")
-    public List<AlertResponse> getAlerts(@RequestParam("farm_id") UUID farmId) {
+    public List<AlertResponse> getAlerts(Authentication authentication, @RequestParam("farm_id") UUID farmId) {
+        authorization.requireFarm(authentication, farmId);
         return alertRepository.findByFarmIdOrderByDetectedAtDesc(farmId).stream()
                 .map(this::alertResponse).toList();
     }
 
     @PostMapping("/alerts")
-    public ResponseEntity<AlertResponse> createAlert(@Valid @RequestBody AlertRequest request) {
+    public ResponseEntity<AlertResponse> createAlert(
+            Authentication authentication,
+            @Valid @RequestBody AlertRequest request) {
+        Farm farm = authorization.requireFarm(authentication, request.farmId());
+        Animal animal = request.animalId() == null ? null : authorization.requireAnimal(authentication, request.animalId());
+        if (animal != null && (animal.getFarm() == null || !farm.getId().equals(animal.getFarm().getId()))) {
+            throw new org.springframework.web.server.ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        Lot lot = request.lotId() == null ? null : authorization.requireLot(authentication, request.lotId());
+        if (lot != null && !farm.getId().equals(lot.getFarm().getId())) {
+            throw new org.springframework.web.server.ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
         Alert alert = Alert.builder()
-                .farm(requireFarm(request.farmId()))
-                .animal(request.animalId() == null ? null : requireAnimal(request.animalId()))
-                .lot(request.lotId() == null ? null : requireLot(request.lotId()))
+                .farm(farm)
+                .animal(animal)
+                .lot(lot)
                 .alertType(request.alertType())
                 .severity(request.severity())
                 .title(request.title())
@@ -359,9 +440,13 @@ public class FrontendResourcesController {
     }
 
     @PatchMapping("/alerts/{id}")
-    public AlertResponse updateAlertStatus(@PathVariable UUID id, @RequestBody AlertStatusRequest request) {
+    public AlertResponse updateAlertStatus(
+            Authentication authentication,
+            @PathVariable UUID id,
+            @RequestBody AlertStatusRequest request) {
         Alert alert = alertRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Alerta no encontrada"));
+        authorization.requireFarm(authentication, alert.getFarm().getId());
         alert.setStatus(request.status());
         if ("resolved".equalsIgnoreCase(request.status())) alert.setResolvedAt(LocalDateTime.now());
         return alertResponse(alertRepository.save(alert));

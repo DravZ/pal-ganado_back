@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -80,10 +81,10 @@ public class ProductService {
 
     @Transactional
     public void delete(UUID id) {
-        if (!productRepository.existsById(id)) {
-            throw new EntityNotFoundException("Producto no encontrado con ID: " + id);
-        }
-        productRepository.deleteById(id);
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Producto no encontrado con ID: " + id));
+        product.setDeletedAt(LocalDateTime.now());
+        productRepository.save(product);
     }
 
     private ProductDTO.Response mapToResponse(Product p) {

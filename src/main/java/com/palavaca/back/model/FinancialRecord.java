@@ -67,6 +67,16 @@ public class FinancialRecord {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
+    @Size(max = 50)
+    @Column(name = "reference_type", length = 50)
+    private String referenceType;
+
+    @Column(name = "reference_id")
+    private UUID referenceId;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

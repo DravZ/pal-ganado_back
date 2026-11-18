@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,6 +24,13 @@ public class FinancialRecordService {
     @Transactional(readOnly = true)
     public List<FinancialRecordDTO.Response> findByOrganizationId(UUID organizationId) {
         return financialRecordRepository.findByOrganizationIdOrderByRecordDateDesc(organizationId).stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<FinancialRecordDTO.Response> findByFarmId(UUID farmId) {
+        return financialRecordRepository.findByFarmIdOrderByRecordDateDesc(farmId).stream()
                 .map(this::mapToResponse)
                 .toList();
     }
@@ -67,21 +75,24 @@ public class FinancialRecordService {
 
     @Transactional
     public void delete(UUID id) {
-        if (!financialRecordRepository.existsById(id)) {
-            throw new EntityNotFoundException("Movimiento financiero no encontrado con ID: " + id);
-        }
-        financialRecordRepository.deleteById(id);
+        FinancialRecord record = financialRecordRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Movimiento financiero no encontrado con ID: " + id));
+        record.setDeletedAt(LocalDateTime.now());
+        financialRecordRepository.save(record);
     }
 
     private FinancialRecordDTO.Response mapToResponse(FinancialRecord f) {
         return FinancialRecordDTO.Response.builder()
                 .id(f.getId())
                 .organizationId(f.getOrganization().getId())
+                .farmId(f.getFarm() == null ? null : f.getFarm().getId())
                 .recordDate(f.getRecordDate())
                 .transactionType(f.getTransactionType())
                 .category(f.getCategory())
                 .amount(f.getAmount())
                 .description(f.getDescription())
+                .referenceType(f.getReferenceType())
+                .referenceId(f.getReferenceId())
                 .createdAt(f.getCreatedAt())
                 .build();
     }

@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -19,7 +20,7 @@ public class MedicationService {
 
     @Transactional(readOnly = true)
     public List<MedicationDTO.Response> findAll() {
-        return medicationRepository.findAll().stream()
+        return medicationRepository.findByDeletedAtIsNull().stream()
                 .map(this::mapToResponse)
                 .toList();
     }
@@ -70,10 +71,10 @@ public class MedicationService {
 
     @Transactional
     public void delete(UUID id) {
-        if (!medicationRepository.existsById(id)) {
-            throw new EntityNotFoundException("Medicamento no encontrado con ID: " + id);
-        }
-        medicationRepository.deleteById(id);
+        Medication med = medicationRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Medicamento no encontrado con ID: " + id));
+        med.setDeletedAt(LocalDateTime.now());
+        medicationRepository.save(med);
     }
 
     private MedicationDTO.Response mapToResponse(Medication med) {

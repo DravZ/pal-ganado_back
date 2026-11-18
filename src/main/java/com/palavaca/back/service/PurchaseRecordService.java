@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.ArrayList;
@@ -24,6 +25,7 @@ public class PurchaseRecordService {
     private final MedicationRepository medicationRepository;
     private final FarmRepository farmRepository;
     private final PurchaseLineRepository purchaseLineRepository;
+    private final FinanceIntegrationService financeIntegrationService;
 
     @Transactional(readOnly = true)
     public List<PurchaseRecordDTO.Response> findByOrganizationId(UUID organizationId) {
@@ -118,9 +120,22 @@ public class PurchaseRecordService {
                         .unitPrice(line.getUnitPrice())
                         .subtotal(line.getSubtotal())
                         .build());
+                if (line.getQuantity() != null) {
+                    increaseProductStock(lineProduct, line.getQuantity());
+                }
             }
         }
+        if (product != null && request.getQuantity() != null) {
+            increaseProductStock(product, request.getQuantity());
+        }
+        financeIntegrationService.recordExpenseForPurchase(saved);
         return mapToResponse(saved);
+    }
+
+    private void increaseProductStock(Product product, BigDecimal quantity) {
+        BigDecimal current = product.getCurrentStock() == null ? BigDecimal.ZERO : product.getCurrentStock();
+        product.setCurrentStock(current.add(quantity));
+        productRepository.save(product);
     }
 
     @Transactional
@@ -150,10 +165,11 @@ public class PurchaseRecordService {
 
     @Transactional
     public void delete(UUID id) {
-        if (!purchaseRecordRepository.existsById(id)) {
-            throw new EntityNotFoundException("Compra no encontrada con ID: " + id);
-        }
-        purchaseRecordRepository.deleteById(id);
+        PurchaseRecord record = purchaseRecordRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Compra no encontrada con ID: " + id));
+        record.setDeletedAt(LocalDateTime.now());
+        purchaseRecordRepository.save(record);
+        financeIntegrationService.removeMovementsFor(FinanceIntegrationService.REFERENCE_PURCHASE, id);
     }
 
     private PurchaseRecordDTO.Response mapToResponse(PurchaseRecord p) {

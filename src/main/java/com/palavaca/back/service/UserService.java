@@ -61,7 +61,7 @@ public class UserService {
                 .name(name)
                 .email(request.getEmail())
                 .phone(request.getPhone())
-                .role(request.getRole() != null ? request.getRole() : "Perfil por confirmar")
+                .role(request.getRole() != null ? request.getRole() : "Trabajador")
                 .status("pending_invitation")
                 .build();
 

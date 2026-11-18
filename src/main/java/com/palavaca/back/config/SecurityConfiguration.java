@@ -113,7 +113,8 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.GET, "/api/v1/auth/csrf").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/session",
-                                "/api/v1/auth/password-resets", "/api/v1/registrations").permitAll()
+                                "/api/v1/auth/password-resets", "/api/v1/auth/password-resets/confirm",
+                                "/api/v1/registrations").permitAll()
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/auth/session").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/auth/session").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/session/renew")

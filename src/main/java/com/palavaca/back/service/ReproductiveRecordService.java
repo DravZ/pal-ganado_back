@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -92,10 +93,10 @@ public class ReproductiveRecordService {
 
     @Transactional
     public void delete(UUID id) {
-        if (!reproductiveRecordRepository.existsById(id)) {
-            throw new EntityNotFoundException("Registro reproductivo no encontrado con ID: " + id);
-        }
-        reproductiveRecordRepository.deleteById(id);
+        ReproductiveRecord record = reproductiveRecordRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Registro reproductivo no encontrado con ID: " + id));
+        record.setDeletedAt(LocalDateTime.now());
+        reproductiveRecordRepository.save(record);
     }
 
     private ReproductiveRecordDTO.Response mapToResponse(ReproductiveRecord r) {

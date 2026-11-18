@@ -2,6 +2,8 @@ package com.palavaca.back.repository;
 
 import com.palavaca.back.model.FinancialRecord;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
@@ -10,6 +12,15 @@ import java.util.UUID;
 
 @Repository
 public interface FinancialRecordRepository extends JpaRepository<FinancialRecord, UUID> {
-    List<FinancialRecord> findByOrganizationIdOrderByRecordDateDesc(UUID organizationId);
-    List<FinancialRecord> findByOrganizationIdAndRecordDateBetween(UUID organizationId, LocalDate startDate, LocalDate endDate);
+
+    @Query("select f from FinancialRecord f where f.organization.id = :organizationId and f.deletedAt is null order by f.recordDate desc")
+    List<FinancialRecord> findByOrganizationIdOrderByRecordDateDesc(@Param("organizationId") UUID organizationId);
+
+    @Query("select f from FinancialRecord f where f.organization.id = :organizationId and f.recordDate between :startDate and :endDate and f.deletedAt is null")
+    List<FinancialRecord> findByOrganizationIdAndRecordDateBetween(@Param("organizationId") UUID organizationId, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+
+    List<FinancialRecord> findByReferenceTypeAndReferenceIdAndDeletedAtIsNull(String referenceType, UUID referenceId);
+
+    @Query("select f from FinancialRecord f where f.farm.id = :farmId and f.deletedAt is null order by f.recordDate desc")
+    List<FinancialRecord> findByFarmIdOrderByRecordDateDesc(@Param("farmId") UUID farmId);
 }

@@ -9,6 +9,7 @@ import com.palavaca.back.repository.FarmRepository;
 import com.palavaca.back.repository.OrganizationRepository;
 import com.palavaca.back.repository.UserRepository;
 import com.palavaca.back.service.UserService;
+import com.palavaca.back.service.PasswordResetService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -55,6 +56,7 @@ public class AuthController {
     private final FarmRepository farmRepository;
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
+    private final PasswordResetService passwordResetService;
 
     @GetMapping("/auth/csrf")
     public AuthDTO.CsrfTokenResponse csrfToken(CsrfToken csrfToken) {
@@ -191,8 +193,16 @@ public class AuthController {
     @PostMapping("/auth/password-resets")
     public AuthDTO.PasswordResetResponse requestPasswordReset(
             @Valid @RequestBody AuthDTO.PasswordResetRequest request) {
+        passwordResetService.requestReset(request.email());
         return new AuthDTO.PasswordResetResponse(
                 "Si existe una cuenta para ese correo, recibirás instrucciones para recuperar el acceso.");
+    }
+
+    @PostMapping("/auth/password-resets/confirm")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void confirmPasswordReset(
+            @Valid @RequestBody AuthDTO.PasswordResetConfirmRequest request) {
+        passwordResetService.confirmReset(request.token(), request.password());
     }
 
     @GetMapping("/me")

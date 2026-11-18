@@ -34,6 +34,7 @@ public class AnimalService {
     private final PaddockRepository paddockRepository;
     private final LotRepository lotRepository;
     private final AnimalIdentifierRepository identifierRepository;
+    private final FinanceIntegrationService financeIntegrationService;
 
     @Transactional(readOnly = true)
     public List<AnimalDTO.Response> findByOrganizationId(UUID organizationId, boolean includePhoto) {
@@ -137,6 +138,7 @@ public class AnimalService {
                     .current(request.getIsCurrent() == null || request.getIsCurrent())
                     .build());
         }
+        financeIntegrationService.recordExpenseForAnimal(savedAnimal);
         return mapToResponse(savedAnimal, true);
     }
 
@@ -218,10 +220,12 @@ public class AnimalService {
 
     @Transactional
     public void delete(UUID id) {
-        if (!animalRepository.existsById(id)) {
-            throw new EntityNotFoundException("Animal no encontrado con ID: " + id);
-        }
-        animalRepository.deleteById(id);
+        Animal animal = animalRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Animal no encontrado con ID: " + id));
+        // Baja lógica: el animal conserva su historial (pesajes, salud, ventas, etc.) y deja de
+        // contarse como activo. El borrado físico fallaría por las claves foráneas que lo referencian.
+        animal.setStatus("inactive");
+        animalRepository.save(animal);
     }
 
     private AnimalDTO.Response mapToResponse(Animal a, boolean includePhoto) {
