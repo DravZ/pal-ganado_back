@@ -11,7 +11,6 @@ import com.palavaca.back.repository.AnimalRepository;
 import com.palavaca.back.repository.AnimalIdentifierRepository;
 import com.palavaca.back.repository.FarmRepository;
 import com.palavaca.back.repository.OrganizationRepository;
-import com.palavaca.back.repository.PaddockRepository;
 import com.palavaca.back.repository.LotRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -31,10 +30,10 @@ public class AnimalService {
     private final AnimalRepository animalRepository;
     private final OrganizationRepository organizationRepository;
     private final FarmRepository farmRepository;
-    private final PaddockRepository paddockRepository;
     private final LotRepository lotRepository;
     private final AnimalIdentifierRepository identifierRepository;
     private final FinanceIntegrationService financeIntegrationService;
+    private final PaddockCapacityService capacityService;
 
     @Transactional(readOnly = true)
     public List<AnimalDTO.Response> findByOrganizationId(UUID organizationId, boolean includePhoto) {
@@ -79,17 +78,17 @@ public class AnimalService {
                     .orElseThrow(() -> new EntityNotFoundException("Finca no encontrada con ID: " + request.getFarmId()));
         }
 
-        Paddock paddock = null;
-        if (request.getPaddockId() != null) {
-            paddock = paddockRepository.findById(request.getPaddockId())
-                    .orElseThrow(() -> new EntityNotFoundException("Potrero no encontrado con ID: " + request.getPaddockId()));
-        }
-
         Lot lot = null;
         if (request.getLotId() != null) {
             lot = lotRepository.findById(request.getLotId())
                     .orElseThrow(() -> new EntityNotFoundException("Lote no encontrado con ID: " + request.getLotId()));
         }
+
+        // La ubicación del animal se deriva del potrero actual de su lote. Bloqueamos ese potrero
+        // para validar la capacidad de forma exclusiva frente a altas simultáneas.
+        Paddock destinationPaddock = lot != null && lot.getCurrentPaddock() != null
+                ? capacityService.lock(lot.getCurrentPaddock().getId())
+                : null;
 
         Animal sire = null;
         if (request.getSireId() != null) {
@@ -106,7 +105,6 @@ public class AnimalService {
         Animal animal = Animal.builder()
                 .organization(org)
                 .farm(farm)
-                .paddock(paddock)
                 .lot(lot)
                 .tagNumber(tagNumber)
                 .name(request.getName())
@@ -129,6 +127,7 @@ public class AnimalService {
                 .build();
 
         Animal savedAnimal = animalRepository.save(animal);
+        capacityService.assertNotOverCapacity(destinationPaddock);
         if (identifierCode != null) {
             identifierRepository.save(AnimalIdentifier.builder()
                     .animal(savedAnimal)
@@ -151,12 +150,6 @@ public class AnimalService {
             Farm farm = farmRepository.findById(request.getFarmId())
                     .orElseThrow(() -> new EntityNotFoundException("Finca no encontrada"));
             animal.setFarm(farm);
-        }
-
-        if (request.getPaddockId() != null) {
-            Paddock paddock = paddockRepository.findById(request.getPaddockId())
-                    .orElseThrow(() -> new EntityNotFoundException("Potrero no encontrado"));
-            animal.setPaddock(paddock);
         }
 
         if (request.getLotId() != null) {
@@ -200,7 +193,15 @@ public class AnimalService {
             animal.setDam(dam);
         }
 
-        return mapToResponse(animalRepository.save(animal), true);
+        Animal savedAnimal = animalRepository.save(animal);
+        // Validamos la capacidad del potrero donde queda el animal (si sigue activo). El bloqueo del
+        // potrero serializa esta comprobación con otros altas, traslados o ediciones simultáneas.
+        if (savedAnimal.getLot() != null && savedAnimal.getLot().getCurrentPaddock() != null
+                && "active".equalsIgnoreCase(savedAnimal.getStatus())) {
+            Paddock paddock = capacityService.lock(savedAnimal.getLot().getCurrentPaddock().getId());
+            capacityService.assertNotOverCapacity(paddock);
+        }
+        return mapToResponse(savedAnimal, true);
     }
 
     private void assertIdentifierAvailable(UUID organizationId, String value, UUID excludeAnimalId) {
@@ -234,8 +235,11 @@ public class AnimalService {
                 .organizationId(a.getOrganization().getId())
                 .farmId(a.getFarm() != null ? a.getFarm().getId() : null)
                 .farmName(a.getFarm() != null ? a.getFarm().getName() : null)
-                .paddockId(a.getPaddock() != null ? a.getPaddock().getId() : null)
-                .paddockName(a.getPaddock() != null ? a.getPaddock().getName() : null)
+                // La ubicación efectiva del animal es el potrero actual de su lote.
+                .paddockId(a.getLot() != null && a.getLot().getCurrentPaddock() != null
+                        ? a.getLot().getCurrentPaddock().getId() : null)
+                .paddockName(a.getLot() != null && a.getLot().getCurrentPaddock() != null
+                        ? a.getLot().getCurrentPaddock().getName() : null)
                 .lotId(a.getLot() != null ? a.getLot().getId() : null)
                 .lotName(a.getLot() != null ? a.getLot().getName() : null)
                 .tagNumber(a.getTagNumber())

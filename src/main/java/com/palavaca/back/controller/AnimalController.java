@@ -4,7 +4,6 @@ import com.palavaca.back.dto.AnimalDTO;
 import com.palavaca.back.model.Animal;
 import com.palavaca.back.model.Farm;
 import com.palavaca.back.model.Lot;
-import com.palavaca.back.model.Paddock;
 import com.palavaca.back.model.User;
 import com.palavaca.back.service.AnimalService;
 import com.palavaca.back.service.HatoAuthorizationService;
@@ -78,12 +77,6 @@ public class AnimalController {
                 throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN);
             }
         }
-        if (request.getPaddockId() != null) {
-            Paddock paddock = authorization.requirePaddock(authentication, request.getPaddockId());
-            if (!farm.getId().equals(paddock.getFarm().getId())) {
-                throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN);
-            }
-        }
         if (request.getSireId() != null) requireAnimalInFarm(authentication, request.getSireId(), farm.getId());
         if (request.getDamId() != null) requireAnimalInFarm(authentication, request.getDamId(), farm.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(animalService.create(request));
@@ -104,10 +97,6 @@ public class AnimalController {
                     org.springframework.http.HttpStatus.FORBIDDEN, "Selecciona una finca autorizada.");
         }
         Farm farm = authorization.requireFarm(authentication, farmId);
-        if (request.getPaddockId() != null
-                && !farm.getId().equals(authorization.requirePaddock(authentication, request.getPaddockId()).getFarm().getId())) {
-            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN);
-        }
         if (request.getLotId() != null
                 && !farm.getId().equals(authorization.requireLot(authentication, request.getLotId()).getFarm().getId())) {
             throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN);

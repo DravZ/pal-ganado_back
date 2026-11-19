@@ -14,9 +14,53 @@ import java.util.UUID;
 public interface AnimalRepository extends JpaRepository<Animal, UUID> {
     List<Animal> findByOrganizationId(UUID organizationId);
     List<Animal> findByFarmId(UUID farmId);
-    List<Animal> findByPaddockId(UUID paddockId);
     List<Animal> findByLotIdAndStatus(UUID lotId, String status);
     Optional<Animal> findByOrganizationIdAndTagNumber(UUID organizationId, String tagNumber);
+
+    /**
+     * Cuenta los animales activos cuya ubicación efectiva (el potrero actual de su lote) es el
+     * potrero indicado. Es la base del control de capacidad.
+     */
+    @Query("""
+            select count(a)
+            from Animal a
+            where a.status = 'active'
+              and a.lot is not null
+              and a.lot.currentPaddock.id = :paddockId
+            """)
+    long countActiveByPaddockId(@Param("paddockId") UUID paddockId);
+
+    /** Ocupación por potrero de una finca: [paddockId, cantidad de animales activos]. */
+    @Query("""
+            select a.lot.currentPaddock.id, count(a)
+            from Animal a
+            where a.status = 'active'
+              and a.lot is not null
+              and a.lot.currentPaddock is not null
+              and a.lot.farm.id = :farmId
+            group by a.lot.currentPaddock.id
+            """)
+    List<Object[]> countActiveByPaddockForFarm(@Param("farmId") UUID farmId);
+
+    /** Cantidad de animales activos de un lote. */
+    @Query("""
+            select count(a)
+            from Animal a
+            where a.status = 'active'
+              and a.lot.id = :lotId
+            """)
+    long countActiveByLotId(@Param("lotId") UUID lotId);
+
+    /** Ocupación por lote de una finca: [lotId, cantidad de animales activos]. */
+    @Query("""
+            select a.lot.id, count(a)
+            from Animal a
+            where a.status = 'active'
+              and a.lot is not null
+              and a.lot.farm.id = :farmId
+            group by a.lot.id
+            """)
+    List<Object[]> countActiveByLotForFarm(@Param("farmId") UUID farmId);
 
     @Query("""
             select case when count(a) > 0 then true else false end

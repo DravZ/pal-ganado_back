@@ -20,7 +20,6 @@ public class AnimalDTO {
         private UUID organizationId;
 
         private UUID farmId;
-        private UUID paddockId;
 
         @Size(max = 50)
         private String tagNumber;
@@ -59,7 +58,6 @@ public class AnimalDTO {
     @Data
     public static class UpdateRequest {
         private UUID farmId;
-        private UUID paddockId;
         private UUID lotId;
         private String tagNumber;
         private String name;

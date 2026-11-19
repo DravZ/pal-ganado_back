@@ -19,16 +19,25 @@ public final class FrontendResourceDTO {
             String code,
             String lotType,
             String purpose,
-            UUID currentPaddockId,
+            @NotNull UUID currentPaddockId,
             LocalDate startDate,
             LocalDate endDate,
             String status,
-            String notes) {}
+            String notes,
+            String movementNotes) {}
 
     public record LotResponse(
             UUID id, UUID farmId, String name, String code, String lotType, String purpose,
-            UUID currentPaddockId, LocalDate startDate, LocalDate endDate, String status,
+            UUID currentPaddockId, String currentPaddockName, Integer animalCount,
+            LocalDate startDate, LocalDate endDate, String status,
             String notes, LocalDateTime createdAt, LocalDateTime updatedAt) {}
+
+    public record LotMovementResponse(
+            UUID id, UUID farmId, UUID lotId, String lotName,
+            UUID originPaddockId, String originPaddockName,
+            UUID destinationPaddockId, String destinationPaddockName,
+            LocalDateTime movementDate, Integer animalCount,
+            UUID movedById, String movedByName, String notes, LocalDateTime createdAt) {}
 
     public record IdentifierRequest(
             @NotNull UUID animalId,

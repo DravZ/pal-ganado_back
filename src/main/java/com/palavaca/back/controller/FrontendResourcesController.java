@@ -7,6 +7,8 @@ import com.palavaca.back.repository.*;
 import com.palavaca.back.service.HatoAuthorizationService;
 import com.palavaca.back.service.FinanceIntegrationService;
 import com.palavaca.back.service.InvestmentService;
+import com.palavaca.back.service.LotService;
+import com.palavaca.back.service.PaddockCapacityService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,8 +21,10 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -29,6 +33,7 @@ import java.util.UUID;
 public class FrontendResourcesController {
 
     private final LotRepository lotRepository;
+    private final LotMovementRepository lotMovementRepository;
     private final FarmRepository farmRepository;
     private final PaddockRepository paddockRepository;
     private final AnimalRepository animalRepository;
@@ -49,38 +54,54 @@ public class FrontendResourcesController {
     private final HatoAuthorizationService authorization;
     private final FinanceIntegrationService financeIntegrationService;
     private final InvestmentService investmentService;
+    private final LotService lotService;
+    private final PaddockCapacityService capacityService;
 
     @GetMapping("/lots")
     public List<LotResponse> getLots(Authentication authentication, @RequestParam("farm_id") UUID farmId) {
         authorization.requireFarm(authentication, farmId);
-        return lotRepository.findByFarmId(farmId).stream().map(this::lotResponse).toList();
+        Map<UUID, Integer> counts = new HashMap<>();
+        for (Object[] row : animalRepository.countActiveByLotForFarm(farmId)) {
+            counts.put((UUID) row[0], ((Number) row[1]).intValue());
+        }
+        return lotRepository.findByFarmId(farmId).stream()
+                .map(lot -> lotResponse(lot, counts.getOrDefault(lot.getId(), 0)))
+                .toList();
     }
 
     @PostMapping("/lots")
     public ResponseEntity<LotResponse> createLot(
             Authentication authentication,
             @Valid @RequestBody LotRequest request) {
-        Farm farm = authorization.requireFarm(authentication, request.farmId());
-        Paddock currentPaddock = request.currentPaddockId() == null
-                ? null
-                : authorization.requirePaddock(authentication, request.currentPaddockId());
-        if (currentPaddock != null
-                && !farm.getId().equals(currentPaddock.getFarm().getId())) {
-            throw new org.springframework.web.server.ResponseStatusException(HttpStatus.FORBIDDEN);
+        authorization.requireFarm(authentication, request.farmId());
+        authorization.requirePaddock(authentication, request.currentPaddockId());
+        User user = authorization.currentUser(authentication);
+        Lot lot = lotService.create(request, user);
+        return ResponseEntity.status(HttpStatus.CREATED).body(lotResponse(lot));
+    }
+
+    @PutMapping("/lots/{id}")
+    public ResponseEntity<LotResponse> updateLot(
+            Authentication authentication,
+            @PathVariable UUID id,
+            @Valid @RequestBody LotRequest request) {
+        Lot existing = authorization.requireLot(authentication, id);
+        authorization.requireFarm(authentication, existing.getFarm().getId());
+        if (request.currentPaddockId() != null) {
+            authorization.requirePaddock(authentication, request.currentPaddockId());
         }
-        Lot lot = Lot.builder()
-                .farm(farm)
-                .name(request.name())
-                .code(request.code())
-                .lotType(request.lotType())
-                .purpose(request.purpose())
-                .currentPaddock(currentPaddock)
-                .startDate(request.startDate())
-                .endDate(request.endDate())
-                .status(request.status() == null ? "active" : request.status())
-                .notes(request.notes())
-                .build();
-        return ResponseEntity.status(HttpStatus.CREATED).body(lotResponse(lotRepository.save(lot)));
+        User user = authorization.currentUser(authentication);
+        Lot lot = lotService.update(id, request, user);
+        return ResponseEntity.ok(lotResponse(lot));
+    }
+
+    @GetMapping("/lot-movements")
+    public List<LotMovementResponse> getLotMovements(
+            Authentication authentication,
+            @RequestParam("farm_id") UUID farmId) {
+        authorization.requireFarm(authentication, farmId);
+        return lotMovementRepository.findByFarmIdOrderByMovementDateDesc(farmId).stream()
+                .map(this::lotMovementResponse).toList();
     }
 
     @GetMapping("/animal-identifiers")
@@ -385,6 +406,12 @@ public class FrontendResourcesController {
                 .status(request.status() == null ? "COMPLETED" : request.status())
                 .notes(request.notes())
                 .build());
+        // Los animales que se mueven pasan a la ubicación del lote destino. Bloqueamos ese potrero
+        // para validar que el traslado no supere su capacidad máxima.
+        Paddock destinationPaddock = movement.getDestinationLot() != null
+                ? movement.getDestinationLot().getCurrentPaddock() : null;
+        Paddock lockedDestination = destinationPaddock == null
+                ? null : capacityService.lock(destinationPaddock.getId());
         if (request.animals() != null) {
             for (MovementAnimalRequest item : request.animals()) {
                 Animal animal = requireAnimal(item.animalId());
@@ -393,6 +420,7 @@ public class FrontendResourcesController {
                         .movement(movement).animal(animal).weight(item.weight()).build());
             }
         }
+        capacityService.assertNotOverCapacity(lockedDestination);
         return ResponseEntity.status(HttpStatus.CREATED).body(movementResponse(movement));
     }
 
@@ -479,11 +507,29 @@ public class FrontendResourcesController {
     }
 
     private LotResponse lotResponse(Lot lot) {
+        return lotResponse(lot, (int) animalRepository.countActiveByLotId(lot.getId()));
+    }
+
+    private LotResponse lotResponse(Lot lot, int animalCount) {
         return new LotResponse(lot.getId(), lot.getFarm().getId(), lot.getName(), lot.getCode(),
                 lot.getLotType(), lot.getPurpose(),
                 lot.getCurrentPaddock() == null ? null : lot.getCurrentPaddock().getId(),
+                lot.getCurrentPaddock() == null ? null : lot.getCurrentPaddock().getName(),
+                animalCount,
                 lot.getStartDate(), lot.getEndDate(), lot.getStatus(), lot.getNotes(),
                 lot.getCreatedAt(), lot.getUpdatedAt());
+    }
+
+    private LotMovementResponse lotMovementResponse(LotMovement item) {
+        return new LotMovementResponse(item.getId(), item.getFarm().getId(),
+                item.getLot().getId(), item.getLot().getName(),
+                item.getOriginPaddock() == null ? null : item.getOriginPaddock().getId(),
+                item.getOriginPaddock() == null ? null : item.getOriginPaddock().getName(),
+                item.getDestinationPaddock().getId(), item.getDestinationPaddock().getName(),
+                item.getMovementDate(), item.getAnimalCount(),
+                item.getMovedBy() == null ? null : item.getMovedBy().getId(),
+                item.getMovedBy() == null ? null : item.getMovedBy().getName(),
+                item.getNotes(), item.getCreatedAt());
     }
 
     private IdentifierResponse identifierResponse(AnimalIdentifier item) {
