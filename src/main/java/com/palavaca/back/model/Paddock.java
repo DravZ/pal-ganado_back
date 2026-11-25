@@ -56,9 +56,7 @@ public class Paddock {
     @Column(name = "forage_type", length = 100)
     private String forageType;
 
-    @Column(name = "capacity_animal_units")
-    private Integer capacityAnimalUnits;
-
+    /** Capacidad máxima medida en número de animales. */
     @Column(name = "capacity")
     private Integer capacity;
 

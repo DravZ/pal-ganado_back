@@ -56,8 +56,10 @@ public class Lot {
     @Column(name = "purpose", length = 100)
     private String purpose;
 
+    // Todo lote activo debe tener un potrero actual: la ubicación de sus animales se deriva de aquí.
+    @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "current_paddock_id")
+    @JoinColumn(name = "current_paddock_id", nullable = false)
     private Paddock currentPaddock;
 
     @Column(name = "start_date")

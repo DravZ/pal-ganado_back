@@ -25,7 +25,7 @@ public class PaddockDTO {
         private BigDecimal areaHectares;
         private BigDecimal hectares;
         private String forageType;
-        private Integer capacityAnimalUnits;
+        /** Capacidad máxima medida en número de animales. */
         private Integer capacity;
         private String status;
     }
@@ -38,7 +38,7 @@ public class PaddockDTO {
         private BigDecimal areaHectares;
         private BigDecimal hectares;
         private String forageType;
-        private Integer capacityAnimalUnits;
+        /** Capacidad máxima medida en número de animales. */
         private Integer capacity;
         private String status;
     }
@@ -54,9 +54,15 @@ public class PaddockDTO {
         private BigDecimal areaHectares;
         private BigDecimal hectares;
         private String forageType;
-        private Integer capacityAnimalUnits;
+        /** Capacidad máxima medida en número de animales. */
         private Integer capacity;
         private String status;
+        /** Animales activos que hoy pastan en el potrero (derivado de sus lotes). */
+        private Integer currentAnimals;
+        /** Capacidad todavía disponible: capacidad máxima menos ocupación. */
+        private Integer availableCapacity;
+        /** Porcentaje de ocupación (0-100) redondeado. */
+        private Integer occupancyPercentage;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
     }

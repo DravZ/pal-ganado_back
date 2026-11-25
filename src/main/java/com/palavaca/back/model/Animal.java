@@ -17,7 +17,6 @@ import java.util.UUID;
 @Table(name = "animals", indexes = {
         @Index(name = "idx_animals_organization_id", columnList = "organization_id"),
         @Index(name = "idx_animals_farm_id", columnList = "farm_id"),
-        @Index(name = "idx_animals_paddock_id", columnList = "paddock_id"),
         @Index(name = "idx_animals_lot_id", columnList = "lot_id"),
         @Index(name = "idx_animals_tag_number", columnList = "tag_number"),
         @Index(name = "idx_animals_status", columnList = "status")
@@ -48,10 +47,8 @@ public class Animal {
     @JoinColumn(name = "farm_id")
     private Farm farm;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "paddock_id")
-    private Paddock paddock;
-
+    // La ubicación del animal se deriva del potrero actual de su lote; no se almacena aquí para
+    // evitar duplicar un dato que puede quedar desincronizado.
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lot_id")
     private Lot lot;

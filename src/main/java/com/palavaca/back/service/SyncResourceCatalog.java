@@ -31,6 +31,7 @@ public class SyncResourceCatalog {
             new Resource("animal_identifiers", AnimalIdentifier.class, "animal.organization.id", "animal.farm.id", false),
             new Resource("paddocks", Paddock.class, "farm.organization.id", "farm.id", false),
             new Resource("lots", Lot.class, "farm.organization.id", "farm.id", false),
+            new Resource("lot_movements", LotMovement.class, "farm.organization.id", "farm.id", false),
             new Resource("weight_records", WeightRecord.class, "animal.organization.id", "animal.farm.id", false),
             new Resource("reproductive_records", ReproductiveRecord.class, "animal.organization.id", "animal.farm.id", false),
             new Resource("health_records", HealthRecord.class, "animal.organization.id", "animal.farm.id", false),
